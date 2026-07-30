@@ -1,0 +1,128 @@
+# ============================================================================
+# ShvIA_v9.Modelfile — MOTOR GENÉRICO (sem persona de empresa)
+# ----------------------------------------------------------------------------
+# Arquitetura em camadas (ver ../../docs/ARQUITETURA-CAMADAS.md):
+#   1. Este Modelfile  = motor neutro (base, sampling, contexto, fallback SYSTEM)
+#   2. App (SHVIA-WEB) = envia role:system como PRIMEIRA mensagem por modo:
+#                        Chat -> persona Anna (../../personas/anna-blue3.md)
+#                        Code -> protocolo do agente (SHVIA-CODE/src/project.rs)
+#   3. RAG             = fatos da Blue3 / dados de cliente, injetados como contexto
+#
+# Comportamento do Ollama que esta arquitetura explora (server/routes.go):
+#   - Se messages[0] da requisição for role:system, o SYSTEM abaixo NÃO é usado
+#     (substituição total). Se a requisição não enviar system, o SYSTEM abaixo
+#     vale como fallback (ollama run, debug, apps de terceiros).
+#   - ATENÇÃO: a checagem é só na posição [0]. Um system fora da primeira posição
+#     faz o SYSTEM do Modelfile ser injetado JUNTO. O app deve fundir todos os
+#     system em UMA mensagem na posição 0.
+#
+# Criação:  ollama create ShvIA:v9 -f ShvIA_v9.Modelfile   (ou ../../scripts/build.sh)
+#   Tag "ShvIA:v9" de propósito: mantém o NOME "ShvIA" (que OLLAMA_THINKING_MODELS
+#   e model_roles do app casam) e permite canário sem tocar em "ShvIA:latest" (v8).
+# NÃO sobrescrever "ShvIA:latest" até o fim do rollout — ver plano de rollout.
+# ============================================================================
+
+FROM gemma4:26b-a4b-it-qat
+
+# ----------------------------------------------------------------------------
+# SYSTEM — fallback neutro e curto (~250 tokens). Sem NADA de Blue3/Anna.
+# Em produção é substituído pelo system do app; precisa apenas ser inofensivo
+# e funcional para os dois usos (conversa e agente com ferramentas).
+# ----------------------------------------------------------------------------
+SYSTEM """
+Você é ShvIA, um assistente técnico multiuso. Você não representa nenhuma empresa: papel, persona e contexto de negócio, quando existirem, chegam pela aplicação como instruções de sistema e têm prioridade sobre este texto.
+
+IDIOMA
+Responda em português do Brasil, a menos que o usuário escreva em outro idioma.
+
+EXECUÇÃO DE TAREFAS
+- Quando receber uma tarefa, execute a tarefa até o fim. Não mude de assunto nem assuma papel de atendimento.
+- Divida tarefas grandes em passos e informe o progresso de forma curta.
+
+FERRAMENTAS
+- Quando houver ferramentas disponíveis, use-as para agir e para verificar fatos. Não descreva como fazer aquilo que você pode fazer.
+- Nunca invente o resultado de uma ferramenta. Se uma chamada falhar, mostre o erro e tente um caminho alternativo.
+- Antes de qualquer ação destrutiva ou irreversível, avise em uma linha e aguarde confirmação.
+
+PRECISÃO
+- Nunca invente comandos, flags, caminhos, APIs, nomes de pacote, versões, URLs, saídas de programa ou procedimentos.
+- Quando não tiver certeza, diga que não tem certeza e mostre como verificar.
+- Nunca use "com certeza", "absolutamente" ou "sem dúvida" quando houver incerteza técnica.
+
+ESTILO
+- Responda primeiro, explique depois. Seja objetivo; expanda somente quando solicitado.
+- Código e comandos em blocos prontos para uso. Referencie código como arquivo:linha.
+"""
+
+# ----------------------------------------------------------------------------
+# SAMPLING — calibração oficial da família Gemma 4 (model card / QAT)
+# ----------------------------------------------------------------------------
+
+# temperature 1.0: o QAT do Gemma 4 é calibrado para temp 1.0 e a família se
+# comporta MAL em temperaturas muito baixas — NÃO copiar o clássico 0.1-0.2 de
+# modelos coder. O app pode sobrescrever por modo via options (parâmetros de
+# sampling são aplicados por requisição SEM recarregar o modelo).
+PARAMETER temperature 1.0
+
+# top_k 64 / top_p 0.95: valores recomendados no model card do Gemma 4.
+PARAMETER top_k 64
+PARAMETER top_p 0.95
+
+# repeat_penalty 1.0: EXPLÍCITO porque o default do Ollama é 1.1, que penaliza
+# tokens estruturais repetidos (indentação, chaves, identificadores, newlines)
+# e degrada código e tool calls. 1.0 = penalidade desligada (semântica llama.cpp).
+PARAMETER repeat_penalty 1.0
+
+# ----------------------------------------------------------------------------
+# CONTEXTO — dimensionado para o hardware real (Tesla V100 16GB)
+# ----------------------------------------------------------------------------
+
+# num_ctx 16384: teto DEFENSÁVEL neste servidor, não o ideal teórico.
+# Justificativa:
+#   - Com num_ctx 4096 o processo já usa 15,2/16,4 GB de VRAM (~1,2 GB livres).
+#   - Flash Attention em Volta DEPENDE DA VERSÃO do Ollama (registre a versão
+#     de produção!): em <= ~0.2x, FA é desligada para o gemma4 em Volta
+#     (ollama/ollama#15641, "512-dim attention heads require Turing+") e o
+#     OLLAMA_KV_CACHE_TYPE=q8_0 do systemd é IGNORADO com o aviso
+#     "quantized kv cache requested but flash attention disabled" — KV em f16.
+#     CORRIGIDO upstream: >= ~0.30 com driver 580.159+ liga FA no V100 (o
+#     aviso nem existe mais no 0.32.x). Conferir com `ollama -v` na Fase 0.
+#   - A atenção híbrida do Gemma 4 (25 camadas sliding-window janela 1024 +
+#     5 globais; verificado no GGUF oficial) mantém o KV barato: 4k -> 16k
+#     custa ~ +0,24 GB de KV f16 + ~0,2 GB de buffer de compute sem FA
+#     (escala com num_batch x num_ctx). Total ~ +0,45 GB -> cabe nos 1,2 GB.
+#   - 32768 com FA OFF custa ~ +1,05 GB — marginal, risco de offload/OOM.
+#     Com FA ON + KV q8_0 ativo (Ollama novo), 32k tende a caber: reavaliar o
+#     teto na validação. Enquanto valer 16k, quem se adapta é o APP: compactar
+#     para manter o prompt <= ~12k tokens (ver ARQUITETURA-CAMADAS.md §4).
+# Validação OBRIGATÓRIA após o create (Fase 0 do rollout):
+#   ollama -v  (registrar no CHANGELOG); ollama ps (exigir "100% GPU");
+#   nvidia-smi; journalctl -u ollama | grep -iE "flash|kv cache|offload|truncat".
+#   AUSÊNCIA dos avisos de FA/KV = versão nova com FA ON (headroom maior),
+#   não falha. Se houver offload: num_batch 128 e, em último caso, num_ctx 12288.
+# NUNCA alternar num_ctx por requisição: valor diferente do carregado dispara
+# reload completo do modelo (sched.go/needsReload). Um único valor, definido AQUI.
+PARAMETER num_ctx 16384
+
+# num_batch 256: metade do default (512) para encolher o buffer de atenção sem
+# FA em contexto longo (escala com num_batch x num_ctx x n_heads). Custo:
+# processamento de prompt mais lento; ganho: caber em 16 GB sem offload.
+# Se a validação ainda mostrar offload, testar 128.
+PARAMETER num_batch 256
+
+# num_predict -1: sem teto no Modelfile (default do Ollama). O APP define por
+# modo via options (Chat 2048 / Code 4096) e é responsável pelo orçamento
+# prompt + num_predict <= num_ctx.
+PARAMETER num_predict -1
+
+# ----------------------------------------------------------------------------
+# O que este arquivo NÃO tem, DE PROPÓSITO:
+# - SEM TEMPLATE: o Ollama tem renderer/parser NATIVOS do Gemma 4
+#   (model/renderers/gemma4.go, model/parsers/gemma4.go) que produzem
+#   message.tool_calls estruturado. Um TEMPLATE custom quebraria o tool calling
+#   nativo que o app já usa (lição da Shana-v1.0, que quebrou o multi-turno).
+# - SEM stop: os stops corretos vêm do template do modelo base (lição dos stops
+#   de llama/ChatML mortos espalhados nos Modelfiles antigos).
+# - SEM min_p/mirostat/etc.: não empilhar amostradores sobre a calibração vendor.
+# - SEM persona, contatos, LGPD ou "SERVIDOR TERMINAL": camada do app + RAG.
+# ----------------------------------------------------------------------------
