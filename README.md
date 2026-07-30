@@ -11,7 +11,7 @@ RAG (ver [docs/ARQUITETURA-CAMADAS.md](docs/ARQUITETURA-CAMADAS.md)).
   (persona Anna no Modelfile, `num_ctx 4096`) — **com bug conhecido no modo
   Code** ([diagnóstico](docs/DIAGNOSTICO-BUG-ANNA-CODE.md)).
 - **Próxima produção:** `ShvIA:v9` ← `modelfiles/active/ShvIA_v9.Modelfile`
-  (motor genérico, `num_ctx 16384`, calibração Gemma 4). **Requer as mudanças
+  (motor genérico, `num_ctx 32768`, calibração Gemma 4). **Requer as mudanças
   no SHVIA-WEB e o rollout sequenciado** de
   [docs/ARQUITETURA-CAMADAS.md §6](docs/ARQUITETURA-CAMADAS.md) — app primeiro,
   modelo depois.
@@ -56,12 +56,13 @@ fontes (código do Ollama) no [diagnóstico](docs/DIAGNOSTICO-BUG-ANNA-CODE.md).
 
 ## Servidor (referência)
 
-Tesla V100-PCIE-16GB · Ollama systemd com `OLLAMA_KEEP_ALIVE=-1`,
-`OLLAMA_MAX_LOADED_MODELS=1`, `OLLAMA_NUM_PARALLEL=1` · modelo base
-`gemma4:26b-a4b-it-qat` (MoE 25.2B/3.8B ativos, QAT Q4_0, tool calling nativo).
-Atenção: em Ollama ≤ ~0.2x, Flash Attention não ativa em Volta →
-`OLLAMA_KV_CACHE_TYPE=q8_0` é ignorado (KV em f16); corrigido em ≥ ~0.30 com
-driver 580.159+ (**conferir `ollama -v` em produção e registrar no CHANGELOG**).
+Tesla V100-PCIE-16GB · **Ollama 0.32.3 + driver 580.173.02** (registrado
+2026-07-30) · systemd com `OLLAMA_KEEP_ALIVE=-1`, `OLLAMA_MAX_LOADED_MODELS=1`,
+`OLLAMA_NUM_PARALLEL=1` · modelo base `gemma4:26b-a4b-it-qat` (MoE 25.2B/3.8B
+ativos, QAT Q4_0, tool calling nativo). Nessa combinação Flash Attention está
+ativa no V100 (issue #15641 corrigido em ≥0.30) e o `OLLAMA_KV_CACHE_TYPE=q8_0`
+vale — é o que sustenta o `num_ctx 32768` da v9. Em Ollama ≤0.2x FA ficava OFF
+(KV f16) e o teto seria 16384 — reavaliar a cada upgrade/downgrade.
 Dimensionamento e validação: comentários do
 [ShvIA_v9.Modelfile](modelfiles/active/ShvIA_v9.Modelfile) e Fase 0 do rollout.
 

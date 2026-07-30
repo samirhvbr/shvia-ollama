@@ -77,37 +77,39 @@ PARAMETER repeat_penalty 1.0
 # CONTEXTO — dimensionado para o hardware real (Tesla V100 16GB)
 # ----------------------------------------------------------------------------
 
-# num_ctx 16384: teto DEFENSÁVEL neste servidor, não o ideal teórico.
+# num_ctx 32768: cobre as requisições reais do modo Code (15-31k tokens).
+# Dimensionado para o ambiente REGISTRADO em produção (2026-07-30):
+#   Ollama 0.32.3 + driver 580.173.02 + Tesla V100 16GB.
 # Justificativa:
-#   - Com num_ctx 4096 o processo já usa 15,2/16,4 GB de VRAM (~1,2 GB livres).
-#   - Flash Attention em Volta DEPENDE DA VERSÃO do Ollama (registre a versão
-#     de produção!): em <= ~0.2x, FA é desligada para o gemma4 em Volta
-#     (ollama/ollama#15641, "512-dim attention heads require Turing+") e o
-#     OLLAMA_KV_CACHE_TYPE=q8_0 do systemd é IGNORADO com o aviso
-#     "quantized kv cache requested but flash attention disabled" — KV em f16.
-#     CORRIGIDO upstream: >= ~0.30 com driver 580.159+ liga FA no V100 (o
-#     aviso nem existe mais no 0.32.x). Conferir com `ollama -v` na Fase 0.
+#   - Com num_ctx 4096 o processo usa 15,2/16,4 GB de VRAM (~1,2 GB livres).
+#   - Flash Attention em Volta depende da versão do Ollama: em <= ~0.2x era
+#     desligada para o gemma4 (ollama/ollama#15641, "512-dim attention heads
+#     require Turing+"), o que ignorava o OLLAMA_KV_CACHE_TYPE=q8_0 (KV f16).
+#     CORRIGIDO em >= ~0.30 com driver 580.159+ — a produção (0.32.3 +
+#     580.173) está na combinação corrigida: FA ON, KV q8_0 valendo.
 #   - A atenção híbrida do Gemma 4 (25 camadas sliding-window janela 1024 +
-#     5 globais; verificado no GGUF oficial) mantém o KV barato: 4k -> 16k
-#     custa ~ +0,24 GB de KV f16 + ~0,2 GB de buffer de compute sem FA
-#     (escala com num_batch x num_ctx). Total ~ +0,45 GB -> cabe nos 1,2 GB.
-#   - 32768 com FA OFF custa ~ +1,05 GB — marginal, risco de offload/OOM.
-#     Com FA ON + KV q8_0 ativo (Ollama novo), 32k tende a caber: reavaliar o
-#     teto na validação. Enquanto valer 16k, quem se adapta é o APP: compactar
-#     para manter o prompt <= ~12k tokens (ver ARQUITETURA-CAMADAS.md §4).
+#     5 globais; verificado no GGUF oficial) mantém o KV barato: as SWA são
+#     capadas na janela e só as 5 globais crescem (~20 KiB/token f16 ->
+#     ~10 KiB com q8_0). 4k -> 32k ~ +0,3 GB de KV + buffer pequeno com FA.
+#     Cabe com folga nos 1,2 GB.
+#   - CONTINGÊNCIA (se um downgrade/upgrade desligar FA): 32k com KV f16
+#     custa ~ +1,05 GB — marginal. A validação abaixo detecta; degrau de
+#     recuo: num_ctx 16384 (e o app compacta para <= ~12k — ver
+#     ARQUITETURA-CAMADAS.md §4).
 # Validação OBRIGATÓRIA após o create (Fase 0 do rollout):
-#   ollama -v  (registrar no CHANGELOG); ollama ps (exigir "100% GPU");
-#   nvidia-smi; journalctl -u ollama | grep -iE "flash|kv cache|offload|truncat".
-#   AUSÊNCIA dos avisos de FA/KV = versão nova com FA ON (headroom maior),
-#   não falha. Se houver offload: num_batch 128 e, em último caso, num_ctx 12288.
+#   ollama -v  (mudou? reavaliar isto aqui); ollama ps (exigir "100% GPU");
+#   nvidia-smi (headroom a 32k); journalctl -u ollama | grep -iE
+#   "flash|kv cache|offload|truncat". No 0.32.3 NÃO devem aparecer avisos de
+#   FA/KV; se aparecer offload/split CPU: num_batch 128 -> num_ctx 16384.
 # NUNCA alternar num_ctx por requisição: valor diferente do carregado dispara
 # reload completo do modelo (sched.go/needsReload). Um único valor, definido AQUI.
-PARAMETER num_ctx 16384
+PARAMETER num_ctx 32768
 
-# num_batch 256: metade do default (512) para encolher o buffer de atenção sem
-# FA em contexto longo (escala com num_batch x num_ctx x n_heads). Custo:
-# processamento de prompt mais lento; ganho: caber em 16 GB sem offload.
-# Se a validação ainda mostrar offload, testar 128.
+# num_batch 256: metade do default (512). Com FA ativa custa pouco (o buffer de
+# atenção é pequeno); é o seguro barato para o cenário de contingência sem FA,
+# em que o buffer escala com num_batch x num_ctx. Custo: processamento de
+# prompt um pouco mais lento. Se a validação mostrar folga e o prompt
+# processing incomodar, subir para 512; se mostrar offload, descer para 128.
 PARAMETER num_batch 256
 
 # num_predict -1: sem teto no Modelfile (default do Ollama). O APP define por

@@ -6,7 +6,7 @@ Histórico reconstruído na auditoria de 2026-07-29 (o repositório git começa 
 
 **Mudança estrutural:** o Modelfile deixa de carregar a persona. Vira motor neutro; a persona Anna (Chat) e o protocolo de agente (Code) passam a ser injetados pelo app como `role:system` por requisição, e os fatos institucionais/de cliente migram para RAG.
 
-- `num_ctx`: 4096 → valor dimensionado para o modo Code (ver comentários no arquivo e validação de VRAM em docs/ARQUITETURA-CAMADAS.md).
+- `num_ctx`: 4096 → **32768** (cobre as requisições reais de 15–31k do modo Code). Sustentado pelo ambiente registrado em produção 2026-07-30: **Ollama 0.32.3 + driver 580.173** → Flash Attention ativa no V100 (issue #15641 corrigido em ≥0.30) e KV q8_0 valendo; contingência se FA regredir: 16384 (comentários no arquivo + Fase 0 em docs/ARQUITETURA-CAMADAS.md).
 - `repeat_penalty`: 1.10 → **1.0** (o default 1.1 do Ollama penaliza tokens estruturais de código).
 - `temperature/top_k/top_p`: calibração oficial do Gemma 4 QAT (1.0/64/0.95) — a família se comporta mal em temperatura baixa; o app pode reduzir por modo via `options` (sem reload).
 - Motivação completa: docs/DIAGNOSTICO-BUG-ANNA-CODE.md.

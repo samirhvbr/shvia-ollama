@@ -10,7 +10,7 @@ entrega o benefício completo com as mudanças no SHVIA-WEB descritas aqui —
 ### Camada 1 — Modelfile (`ShvIA:v9`, o MOTOR — muda raramente)
 
 - **Contém:** modelo base (`gemma4:26b-a4b-it-qat`), parâmetros de runner e
-  sampling (`num_ctx 16384`, `temp 1.0`, `top_k 64`, `top_p 0.95`,
+  sampling (`num_ctx 32768`, `temp 1.0`, `top_k 64`, `top_p 0.95`,
   `repeat_penalty 1.0`, `num_batch 256`, `num_predict -1`) e um SYSTEM neutro
   mínimo que só vale como fallback para uso direto (`ollama run`, debug).
 - **Nunca contém:** persona de empresa, fatos institucionais, protocolo de
@@ -101,9 +101,9 @@ comportamento desejado nos dois modos**:
 
 | Regra | Detalhe |
 |---|---|
-| **NUNCA enviar `num_ctx`** por requisição | Valor diferente do carregado dispara reload completo (`sched.go/needsReload`). `num_ctx` vive só no Modelfile (16384). Idem **`shift`**: no Ollama 0.32.x, alternar `shift` por request também dispara reload — não enviar. |
+| **NUNCA enviar `num_ctx`** por requisição | Valor diferente do carregado dispara reload completo (`sched.go/needsReload`). `num_ctx` vive só no Modelfile (32768). Idem **`shift`**: no Ollama 0.32.x, alternar `shift` por request também dispara reload — não enviar. |
 | Chat | `options: { "num_predict": 2048 }` — sampling herdado do Modelfile (calibração Gemma 4). |
-| Code | `options: { "num_predict": 4096 }` — o default atual do app (8192, teto 16384) fica **inviável** com `num_ctx 16384`: prompt de ~12k + 8192 de saída não cabem. Temperatura: manter 1.0 herdada (Gemma 4 é exceção à regra "temp baixa p/ código"); A/B via options muda sem reload. |
+| Code | `options: { "num_predict": 4096 }` — teto explícito por modo em vez do default global do app (8192): com `num_ctx 32768`, prompt de até ~28k + 4096 de saída fecham o orçamento. Temperatura: manter 1.0 herdada (Gemma 4 é exceção à regra "temp baixa p/ código"); A/B via options muda sem reload. |
 | Ambos | `"truncate": false` no **topo** da requisição (não em `options`) → estouro de contexto vira **HTTP 400 visível** em vez de truncamento silencioso. Verificado no código da release estável (`ChatRequest.Truncate`, `routes.go`), mas **não documentado** em `docs/api.md` para `/api/chat` — contrato de código, vigiar em upgrades. **Só ligar na Fase 2** (com o v8 de `num_ctx 4096` ainda ativo, toda requisição Code de 15–31k viraria 400 duro — pior que o bug) e **somente junto com o tratamento do 400** (§4). Nota de compat: atinge também `/agent/chat` (contrato público) — comunicar a integradores que dependiam do truncamento silencioso. |
 | `num_predict` por modo | **Exige encanamento novo**: nenhum caller passa `options.max_tokens` hoje (o driver cai no default global 8192, `OllamaDriver.php:112-117`). Adicionar a passagem por modo (Chat 2048 / Code 4096) na Fase 1 — via env global não dá, afetaria os dois modos igualmente. |
 | `keep_alive` | O app manda `"30m"` hardcoded via cast em `OllamaDriver.php:105`, que **derruba** o `OLLAMA_KEEP_ALIVE=-1` do systemd (o modelo descarrega após 30 min ociosos apesar do preload). **Cuidado:** o cast `(string)` do driver transformaria `-1` em `"-1"`, que o `time.ParseDuration` do Ollama rejeita (400 em tudo). Correção certa: **omitir o campo** quando a config estiver vazia (o env do servidor manda — mais limpo, o systemd já tem `-1`); alternativa: `is_numeric($ka) ? (int)$ka : (string)$ka`. |
@@ -140,8 +140,10 @@ apenas `/agent/run`). Logo a compactação do Code mora em dois lugares:
 - **Chat (ChatService):** janela deslizante de turnos + sumário; o
   `applyContextBudget` existente já lê o `num_ctx` real via `/api/show`
   (exige `memory.auto_compaction_enabled` ligado).
-- `MAX_PROMPT_TOKENS = 16384 − num_predict(modo) − 512` (≈ 13,8k Chat / ≈ 11,7k
-  Code). Estimador: **`chars/4`, o mesmo do resto do app**
+- `MAX_PROMPT_TOKENS = 32768 − num_predict(modo) − 512` (≈ 30,2k Chat / ≈ 28,2k
+  Code — as requisições reais de até 31k só compactam na cauda; se o degrau de
+  contingência baixar o Modelfile para 16384, a fórmula acompanha).
+  Estimador: **`chars/4`, o mesmo do resto do app**
   (`ContextBudget.php:65`, `OllamaDriver.php:240`) — não introduzir um segundo
   estimador.
 - **Monitoração:** logar `prompt_eval_count` vs. estimado — atenção ao falso
@@ -181,18 +183,18 @@ ligada = Chat sem persona e protocolo ainda enterrado como user.
 ### Fase 0 — validar infra (sem tráfego)
 
 ```bash
-ollama -v          # REGISTRAR a versão no CHANGELOG — as premissas de FA/KV dependem dela
+ollama -v          # REGISTRADO em produção (2026-07-30): 0.32.3 + driver 580.173 →
+                   # combinação com FA ativa no V100 (issue #15641 corrigido) e KV q8_0 valendo.
+                   # Se a versão mudou, reavaliar o num_ctx do Modelfile.
 ./scripts/build.sh modelfiles/active/ShvIA_v9.Modelfile ShvIA:v9   # tag NOVA; não tocar em ShvIA:latest
 curl -s localhost:11434/api/generate -d '{"model":"ShvIA:v9","prompt":"ping","stream":false}'
-ollama ps          # EXIGIR "100% GPU"; split CPU/GPU = offload → num_batch 128; persiste → num_ctx 12288
-nvidia-smi         # headroom com o modelo carregado a 16k
+ollama ps          # EXIGIR "100% GPU"; split CPU/GPU = offload → num_batch 128 → num_ctx 16384
+nvidia-smi         # headroom com o modelo carregado a 32k
 journalctl -u ollama --since "-15 min" | grep -iE "flash|kv cache|offload|truncat|reload"
-# Ollama <= ~0.2x no V100: esperado "FlashAttention:Disabled" + "quantized kv
-#   cache requested but flash attention disabled" (q8_0 inativo → premissa do teto 16k).
-# Ollama >= ~0.30 + driver 580.159+: os avisos NÃO aparecem — FA liga no V100
-#   (issue #15641 corrigido), q8_0 passa a valer e há headroom para reavaliar
-#   num_ctx 24-32k. AUSÊNCIA dos avisos = versão nova, não falha.
-# Reavaliar a cada upgrade do Ollama/driver.
+# No 0.32.3 NÃO devem aparecer avisos de FA/KV. Se aparecer
+#   "FlashAttention:Disabled"/"quantized kv cache requested but flash attention
+#   disabled", algo regrediu (downgrade/driver) → aplicar a contingência do
+#   Modelfile (num_ctx 16384). Reavaliar a cada upgrade do Ollama/driver.
 ```
 
 Teste de pico: prompt de ~13k tokens + geração longa, observando `nvidia-smi`.
@@ -209,7 +211,7 @@ evento SSE `error` com `status`/`kind` + compactação/retry do §4.
 
 **NÃO entra na Fase 1: `truncate:false`.** Com o v8 (`num_ctx 4096`) ainda
 ativo, ele transformaria toda requisição Code de 15–31k em 400 duro — pior que
-o bug atual. Liga na Fase 2, quando o `num_ctx` real for 16384 e o tratamento
+o bug atual. Liga na Fase 2, quando o `num_ctx` real for 32768 e o tratamento
 do 400 já estiver deployado.
 
 **Seguro com o v8 ainda ativo:** o system da requisição SUBSTITUI o SYSTEM do
@@ -248,7 +250,7 @@ para realinhar a tag histórica; arquivar o v8 como backup.
 1. Chat: "Quem é você?" → persona Anna, contatos SÓ os do contexto institucional.
 2. Code: "Leia o TAREFA.md e execute" com histórico ≥ 12k tokens →
    `tool_calls` estruturados, **zero** "Olá! Eu sou a Anna" (o sintoma do bug).
-3. Overflow (Fase 2+): prompt > 16k → HTTP 400 (`truncate:false`), o
+3. Overflow (Fase 2+): prompt > 32k → HTTP 400 (`truncate:false`), o
    `CodeChatController`/`anna` compacta e reenvia uma vez, e o erro chega ao
    cliente com `status`/`kind` se persistir.
 4. `prompt_eval_count` vs. estimado (detector de truncamento residual —
@@ -267,11 +269,11 @@ para realinhar a tag histórica; arquivar o v8 como backup.
 
 Com `OLLAMA_MAX_LOADED_MODELS=1` e 16 GB, não há como servir um segundo modelo
 dedicado ao Code sem swap a cada alternância — por isso a v9 é **um motor para
-os dois modos**. Se o produto exigir contexto real de 32k+, os caminhos são:
+os dois modos**. Os 32k atuais dependem de FA ativa (Ollama ≥0.30 + driver
+580.159+ no V100 — a produção 0.32.3/580.173 cumpre). Se o produto exigir
+contexto real de 64k+, os caminhos são:
 
-- **Upgrade do Ollama/driver** (≥ ~0.30 + driver 580.159+ liga FA no próprio
-  V100 → KV q8_0 passa a valer → 32k+ fica viável sem trocar hardware) e/ou
-  **GPU Turing+ com mais VRAM** (64k fica barato); ou
+- **GPU Turing+ com mais VRAM** (64k+ fica barato); ou
 - **modelo menor** (12b/14b — ex.: `tools/Dev.Modelfile` sobre qwen2.5-coder
   como modelo dedicado do papel `task`/code), aceitando perda de qualidade.
 
