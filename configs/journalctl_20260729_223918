@@ -1,0 +1,100 @@
+Jul 30 01:38:49 shvia1 ollama[1738427]: srv        update:    - prompt 0x1ffd2aa0:    4051 tokens, checkpoints:  2,   360.867 MiB
+Jul 30 01:38:49 shvia1 ollama[1738427]: srv        update:    - prompt 0x2a8ea3d0:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:38:49 shvia1 ollama[1738427]: srv        update:    - prompt 0x282ac080:    3365 tokens, checkpoints:  2,   353.741 MiB
+Jul 30 01:38:49 shvia1 ollama[1738427]: srv        update:    - prompt 0x211600a0:    2430 tokens, checkpoints:  2,   344.029 MiB
+Jul 30 01:38:49 shvia1 ollama[1738427]: srv        update:    - prompt 0x1ff62d80:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:38:49 shvia1 ollama[1738427]: srv        update:    - prompt 0x20fb4fb0:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:38:49 shvia1 ollama[1738427]: srv        update:    - prompt 0x1fffce70:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:38:49 shvia1 ollama[1738427]: srv  get_availabl: prompt cache update took 648.23 ms
+Jul 30 01:38:49 shvia1 ollama[1738427]: slot launch_slot_: id  0 | task -1 | sampler chain: logits -> penalties -> ?dry -> ?top-n-sigma -> top-k -> ?typical -> top-p -> ?min-p -> ?xtc -> temp-ext -> dist
+Jul 30 01:38:49 shvia1 ollama[1738427]: slot launch_slot_: id  0 | task -1 | sampler params:
+Jul 30 01:38:49 shvia1 ollama[1738427]:         repeat_last_n = 64, repeat_penalty = 1.100, frequency_penalty = 0.000, presence_penalty = 0.000
+Jul 30 01:38:49 shvia1 ollama[1738427]:         dry_multiplier = 0.000, dry_base = 1.750, dry_allowed_length = 2, dry_penalty_last_n = 4096
+Jul 30 01:38:49 shvia1 ollama[1738427]:         top_k = 64, top_p = 0.950, min_p = 0.000, xtc_probability = 0.000, xtc_threshold = 0.100, typical_p = 1.000, top_n_sigma = -1.000, temp = 0.850
+Jul 30 01:38:49 shvia1 ollama[1738427]:         mirostat = 0, mirostat_lr = 0.100, mirostat_ent = 5.000, adaptive_target = -1.000, adaptive_decay = 0.900
+Jul 30 01:38:49 shvia1 ollama[1738427]: slot launch_slot_: id  0 | task 273783 | processing task, is_child = 0
+Jul 30 01:38:49 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | new prompt, n_ctx_slot = 4096, n_keep = 4, task.n_tokens = 2051
+Jul 30 01:38:49 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | checking checkpoint with [2465, 4000] against 0...
+Jul 30 01:38:49 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | checking checkpoint with [1957, 3492] against 0...
+Jul 30 01:38:49 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | forcing full prompt re-processing due to lack of cache data (likely due to SWA or hybrid/recurrent memory, see https://github.com/ggml-org/llama.cpp/pull/13194#issuecomment-2868343055)
+Jul 30 01:38:49 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | erased invalidated context checkpoint (pos_min = 1957, pos_max = 3492, n_tokens = 3493, n_swa = 1024, pos_next = 0, size = 106.262 MiB)
+Jul 30 01:38:49 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | erased invalidated context checkpoint (pos_min = 2465, pos_max = 4000, n_tokens = 4001, n_swa = 1024, pos_next = 0, size = 106.262 MiB)
+Jul 30 01:38:49 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | cached n_tokens = 0, memory_seq_rm [0, end)
+Jul 30 01:38:50 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | cached n_tokens = 512, memory_seq_rm [512, end)
+Jul 30 01:38:51 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | cached n_tokens = 1024, memory_seq_rm [1024, end)
+Jul 30 01:38:52 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | cached n_tokens = 1536, memory_seq_rm [1536, end)
+Jul 30 01:38:52 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | cached n_tokens = 1539, memory_seq_rm [1539, end)
+Jul 30 01:38:52 shvia1 ollama[1738427]: slot create_check: id  0 | task 273783 | created context checkpoint 1 of 32 (pos_min = 3, pos_max = 1538, n_tokens = 1539, size = 106.262 MiB)
+Jul 30 01:38:53 shvia1 ollama[1738427]: slot print_timing: id  0 | task 273783 | prompt processing, n_tokens =   2047, progress = 1.00, t =   3.68 s / 555.62 tokens per second
+Jul 30 01:38:53 shvia1 ollama[1738427]: slot   operator(): id  0 | task 273783 | cached n_tokens = 2047, memory_seq_rm [2047, end)
+Jul 30 01:38:53 shvia1 ollama[1738427]: slot init_sampler: id  0 | task 273783 | init sampler, took 0.74 ms, tokens: text = 2051, total = 2051
+Jul 30 01:38:53 shvia1 ollama[1738427]: slot create_check: id  0 | task 273783 | created context checkpoint 2 of 32 (pos_min = 511, pos_max = 2046, n_tokens = 2047, size = 106.262 MiB)
+Jul 30 01:38:56 shvia1 ollama[1738427]: slot print_timing: id  0 | task 273783 | n_decoded =    106, tg =  35.09 t/s, tg_3s =  35.09 t/s
+Jul 30 01:38:59 shvia1 ollama[1738427]: slot print_timing: id  0 | task 273783 | n_decoded =    216, tg =  35.82 t/s, tg_3s =  36.55 t/s
+Jul 30 01:39:02 shvia1 ollama[1738427]: slot print_timing: id  0 | task 273783 | n_decoded =    323, tg =  35.69 t/s, tg_3s =  35.45 t/s
+Jul 30 01:39:03 shvia1 ollama[1738427]: slot print_timing: id  0 | task 273783 | prompt eval time =    3954.18 ms /  2051 tokens (    1.93 ms per token,   518.69 tokens per second)
+Jul 30 01:39:03 shvia1 ollama[1738427]: slot print_timing: id  0 | task 273783 |        eval time =    9369.51 ms /   334 tokens (   28.05 ms per token,    35.65 tokens per second)
+Jul 30 01:39:03 shvia1 ollama[1738427]: slot print_timing: id  0 | task 273783 |       total time =   13323.69 ms /  2385 tokens
+Jul 30 01:39:03 shvia1 ollama[1738427]: slot print_timing: id  0 | task 273783 |    graphs reused =     272232
+Jul 30 01:39:03 shvia1 ollama[1738427]: slot      release: id  0 | task 273783 | stop processing: n_tokens = 2384, truncated = 0
+Jul 30 01:39:03 shvia1 ollama[1738427]: srv  update_slots: all slots are idle
+Jul 30 01:39:03 shvia1 ollama[1738427]: [GIN] 2026/07/30 - 01:39:03 | 200 | 14.865836238s |  200.36.196.254 | POST     "/api/chat"
+Jul 30 01:39:03 shvia1 ollama[1738427]: [GIN] 2026/07/30 - 01:39:03 | 200 |    3.620242ms |  200.36.196.254 | GET      "/api/tags"
+Jul 30 01:39:04 shvia1 ollama[1738427]: time=2026-07-30T01:39:04.201Z level=WARN source=llama_server.go:314 msg="truncating input prompt" limit=2051 prompt=16370 keep=5 new=2051
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv  server_strea: conv_id= (empty=1)
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot get_availabl: id  0 | task -1 | selected slot by LRU, t_last = 389569972601
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv  get_availabl: updating prompt cache
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv   prompt_save:  - saving prompt with length 2384, total state size = 131.026 MiB (draft: 0.000 MiB)
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv         alloc:  - making room for prompt cache entry, removing oldest entry (size = 349.461 MiB)
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv          load:  - looking for better prompt, base f_keep = 0.002, sim = 0.002
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:  - cache state: 23 prompts, 8173.442 MiB (limits: 8192.000 MiB, 4096 tokens, 81179 est)
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x1fffbe70:    3067 tokens, checkpoints:  2,   350.645 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x20faff00:    2354 tokens, checkpoints:  2,   343.239 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x216086e0:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x2a9713c0:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x2ab2bcc0:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x2aad9d60:    2775 tokens, checkpoints:  2,   347.612 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x20def940:    3005 tokens, checkpoints:  2,   350.001 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x21001850:    3728 tokens, checkpoints:  2,   357.511 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x2aa956f0:    3473 tokens, checkpoints:  2,   354.863 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x210d5d70:    4015 tokens, checkpoints:  2,   360.493 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x20daf5c0:    3238 tokens, checkpoints:  2,   352.422 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x1ffb34b0:    3931 tokens, checkpoints:  2,   359.620 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x27aa5110:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x210435c0:    3773 tokens, checkpoints:  2,   357.979 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x28292e90:    2647 tokens, checkpoints:  2,   346.283 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x1ffd2aa0:    4051 tokens, checkpoints:  2,   360.867 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x2a8ea3d0:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x282ac080:    3365 tokens, checkpoints:  2,   353.741 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x211600a0:    2430 tokens, checkpoints:  2,   344.029 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x1ff62d80:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x20fb4fb0:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x1fffce70:    4095 tokens, checkpoints:  2,   361.324 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv        update:    - prompt 0x2aa9a9c0:    2384 tokens, checkpoints:  2,   343.551 MiB
+Jul 30 01:39:04 shvia1 ollama[1738427]: srv  get_availabl: prompt cache update took 651.87 ms
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot launch_slot_: id  0 | task -1 | sampler chain: logits -> penalties -> ?dry -> ?top-n-sigma -> top-k -> ?typical -> top-p -> ?min-p -> ?xtc -> temp-ext -> dist
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot launch_slot_: id  0 | task -1 | sampler params:
+Jul 30 01:39:04 shvia1 ollama[1738427]:         repeat_last_n = 64, repeat_penalty = 1.100, frequency_penalty = 0.000, presence_penalty = 0.000
+Jul 30 01:39:04 shvia1 ollama[1738427]:         dry_multiplier = 0.000, dry_base = 1.750, dry_allowed_length = 2, dry_penalty_last_n = 4096
+Jul 30 01:39:04 shvia1 ollama[1738427]:         top_k = 64, top_p = 0.950, min_p = 0.000, xtc_probability = 0.000, xtc_threshold = 0.100, typical_p = 1.000, top_n_sigma = -1.000, temp = 0.850
+Jul 30 01:39:04 shvia1 ollama[1738427]:         mirostat = 0, mirostat_lr = 0.100, mirostat_ent = 5.000, adaptive_target = -1.000, adaptive_decay = 0.900
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot launch_slot_: id  0 | task 274123 | processing task, is_child = 0
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | new prompt, n_ctx_slot = 4096, n_keep = 4, task.n_tokens = 2051
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | checking checkpoint with [511, 2046] against 0...
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | checking checkpoint with [3, 1538] against 0...
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | forcing full prompt re-processing due to lack of cache data (likely due to SWA or hybrid/recurrent memory, see https://github.com/ggml-org/llama.cpp/pull/13194#issuecomment-2868343055)
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | erased invalidated context checkpoint (pos_min = 3, pos_max = 1538, n_tokens = 1539, n_swa = 1024, pos_next = 0, size = 106.262 MiB)
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | erased invalidated context checkpoint (pos_min = 511, pos_max = 2046, n_tokens = 2047, n_swa = 1024, pos_next = 0, size = 106.262 MiB)
+Jul 30 01:39:04 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | cached n_tokens = 0, memory_seq_rm [0, end)
+Jul 30 01:39:05 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | cached n_tokens = 512, memory_seq_rm [512, end)
+Jul 30 01:39:06 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | cached n_tokens = 1024, memory_seq_rm [1024, end)
+Jul 30 01:39:07 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | cached n_tokens = 1536, memory_seq_rm [1536, end)
+Jul 30 01:39:07 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | cached n_tokens = 1539, memory_seq_rm [1539, end)
+Jul 30 01:39:07 shvia1 ollama[1738427]: slot create_check: id  0 | task 274123 | created context checkpoint 1 of 32 (pos_min = 3, pos_max = 1538, n_tokens = 1539, size = 106.262 MiB)
+Jul 30 01:39:08 shvia1 ollama[1738427]: slot print_timing: id  0 | task 274123 | prompt processing, n_tokens =   2047, progress = 1.00, t =   3.60 s / 568.52 tokens per second
+Jul 30 01:39:08 shvia1 ollama[1738427]: slot   operator(): id  0 | task 274123 | cached n_tokens = 2047, memory_seq_rm [2047, end)
+Jul 30 01:39:08 shvia1 ollama[1738427]: slot init_sampler: id  0 | task 274123 | init sampler, took 0.71 ms, tokens: text = 2051, total = 2051
+Jul 30 01:39:08 shvia1 ollama[1738427]: slot create_check: id  0 | task 274123 | created context checkpoint 2 of 32 (pos_min = 511, pos_max = 2046, n_tokens = 2047, size = 106.262 MiB)
+Jul 30 01:39:11 shvia1 ollama[1738427]: slot print_timing: id  0 | task 274123 | n_decoded =    107, tg =  35.51 t/s, tg_3s =  35.51 t/s
+Jul 30 01:39:14 shvia1 ollama[1738427]: slot print_timing: id  0 | task 274123 | n_decoded =    214, tg =  35.46 t/s, tg_3s =  35.41 t/s
+Jul 30 01:39:17 shvia1 ollama[1738427]: slot print_timing: id  0 | task 274123 | n_decoded =    323, tg =  35.66 t/s, tg_3s =  36.05 t/s
