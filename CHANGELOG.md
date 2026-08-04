@@ -49,9 +49,27 @@ Histórico reconstruído na auditoria de 2026-07-29 (o repositório git começa 
 
 ---
 
+## [Shana v2.2] — 2026-08-04 — persona com visão (prints de tela)
+
+Requisito novo: a Shana precisa **interpretar prints de tela**. Isso redefine a base e o orçamento de VRAM. Alvo: Tesla V100 16GB.
+
+- **FROM `gemma4:26b-a4b-it-qat` → `gemma4:12b-it-qat`.** O 26b **não cabe com visão ligada**: pesos 14,0 GB + projector CLIP 573M BF16 1,2 GB = **16,0 GB de pesos numa placa de 16 GB**. Os 15,2/16,4 GB medidos no v9 são leitura **só-texto** — o projector só carrega quando chega imagem, e o primeiro print estoura o cartão. O `12b-it-qat` custa 7,0 GB + 0,175 GB = **7,2 GB**, deixando ~7 GB de folga. Bônus: dense 11,9B ativa ~3x mais parâmetros por token que o MoE 26B-A4B (3,8B ativos) — melhor para raciocinar sobre a imagem. Perda aceita: vision tower menor (52,4M vs 573M).
+- **Resolve o A/B pendente do v2.0/v2.1** (qwen3:14b vs gemma4:12b, lição 3 do README): vence a família **gemma4** por decisão de requisito, não de benchmark — o qwen3:14b não tem visão. Registrado aqui para não ficar mais um A/B sem resultado.
+- `temperature/top_p/top_k`: 0.9/0.9/50 → **1.0/0.95/64** (blob `params` oficial publicado com o modelo). Os valores antigos eram herança da linhagem qwen3 — lição 2.
+- `repeat_penalty`: 1.15 → **1.0** (desligado). 1.15 é mais agressivo até que o default 1.1 já criticado no v9; degradava transcrição de log/código e corroía os bordões da persona.
+- `num_ctx`: 8192 → **32768**. Print widescreen vira vários tiles (o Gemma 4 aceita resolução e aspect ratio variáveis); 8k sumia em duas ou três imagens com histórico.
+- `num_predict`: 512 → **-1**. O gemma4 é modelo *thinking* e os tokens de raciocínio saem do mesmo orçamento — repetição exata do bug do Shana v2.0 (qwen3 sem `/no_think`). `think` não é parâmetro de Modelfile: é campo de requisição da API (`/set nothink` no CLI).
+- `num_batch` **512** explícito, para o 256 do ShvIA_v9 não ser copiado — lá é contingência de placa cheia, aqui há folga e o batch maior acelera o prompt processing das imagens.
+- **Removidos os stops mortos** `<|end_of_text|>`, `<|eot_id|>` (llama) e `<|im_end|>` (ChatML) — lição 1, já flagrada para o v2.1 no README e copiada mesmo assim. Gemma fecha turno com `<end_of_turn>`, vindo do template da base.
+- SYSTEM: header copiado do ShvIA_v9 (com definições em branco e instruções de rollout do `ShvIA:v9`) reescrito para a Shana; nova seção **"Prints e imagens"** obriga ler e transcrever literalmente antes do deboche, e proibe adivinhar texto ilegível.
+- ⚠ **Inversão em relação ao ShvIA:** aqui o SYSTEM *é* o produto. Cliente que enviar `role:system` em `messages[0]` **apaga a Shana** (substituição total, `server/routes.go`). Consumir via `ollama run`, sem system próprio.
+- Validação: a primeira rodada pós-`create` **tem que ser com print** — teste só-texto não prova que cabe. Depois `ollama ps` = "100% GPU".
+
+---
+
 ## Linhagens paralelas (resumo — detalhes em modelfiles/README.md)
 
 - **Anna v1.0→v2.4 + bk.Anna** (arquivada): linhagem de atendimento puro-closed-book. Do documento LGPD de 11 KB colado no SYSTEM (v1.0) até a máquina de recusa greedy (v2.2). Proibia código explicitamente — a semente cultural do bug. Pares A/B v2.3/v2.4 sem registro do vencedor.
-- **Shana v1.0→v2.1**: persona pessoal. v1.0 tinha TEMPLATE que quebrava multi-turno e stops nos próprios bordões; v2.0 corrigiu; v2.1 é A/B de base (qwen3 vs gemma4:12b) sem registro do vencedor.
+- **Shana v1.0→v2.2**: persona pessoal. v1.0 tinha TEMPLATE que quebrava multi-turno e stops nos próprios bordões; v2.0 corrigiu; v2.1 abriu um A/B de base (qwen3 vs gemma4:12b) sem registro do vencedor — **fechado no v2.2** (gemma4, por causa do requisito de visão). v2.2 é a primeira da casa com multimodalidade e a primeira a dimensionar VRAM contando o projector.
 - **Terminal (SShvTerm / ShvIA_qwen / ShvIA_qwen_2 / ShvIA_gpt)**: assistentes de shell. `ShvIA_qwen_2` (num_ctx 32768, diretivas limpas) é o melhor; `ShvIA_qwen` era duplicata e foi arquivado. `ShvIA_gpt` demonstrou porte correto de diretivas entre famílias.
 - **Dev.Modelfile**: assistente da stack SHVIA sobre qwen2.5-coder — melhor candidato a modelo de código dedicado se o modo Code ganhar modelo próprio (papel `task`/`code` no model_roles do app).

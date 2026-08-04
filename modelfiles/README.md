@@ -33,7 +33,8 @@ Revisado em 2026-07-29 (auditoria completa das 20 versões — ver [../docs/DIAG
 | Arquivo | Base | Notas |
 |---|---|---|
 | `Shana-v2.0.Modelfile` | qwen3:14b | Persona pessoal sarcástica, bem estruturada, com few-shots. **Defeitos:** falta `/no_think` (qwen3 gasta o `num_predict 512` em raciocínio) e os stops `<\|end_of_text\|>`/`<\|eot_id\|>` são tokens de llama (mortos aqui). |
-| `Shana-v2.1.Modelfile` | gemma4:12b | Idêntico ao v2.0 exceto o FROM — teste A/B de base. Stops de llama/ChatML mortos na família gemma (`<end_of_turn>` seria o real). Nenhum registro de qual base venceu o A/B. |
+| `Shana-v2.1.Modelfile` | gemma4:12b | Idêntico ao v2.0 exceto o FROM — teste A/B de base. Stops de llama/ChatML mortos na família gemma (`<end_of_turn>` seria o real). A/B **resolvido no v2.2**: vence gemma4 (o qwen3:14b não tem visão). Superado. |
+| `Shana-v2.2.Modelfile` | **gemma4:12b-it-qat** | temp 1.0/64/0.95 · `repeat_penalty` 1.0 · num_ctx **32768** · `num_predict` -1 | **Atual.** Persona com **visão** (interpreta prints). Base trocada do `26b-a4b-it-qat`, que **não cabe na V100 16GB com visão**: 14 GB de pesos + 1,2 GB de projector = 16 GB numa placa de 16 GB (a medição de 15,2 GB do v9 é só-texto — o projector só carrega quando chega imagem). Stops mortos removidos, calibração Gemma 4 oficial aplicada. ⚠ Ao contrário do ShvIA, o SYSTEM **é** o produto: cliente que enviar `role:system` apaga a persona. |
 
 ## archive/ (não usar — motivo do arquivamento)
 
