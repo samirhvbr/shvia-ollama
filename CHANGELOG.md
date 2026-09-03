@@ -1,6 +1,57 @@
 # CHANGELOG — Modelfiles SHVIA
 
-Histórico reconstruído na auditoria de 2026-07-29 (o repositório git começa em 2026-07-30; as versões anteriores foram datadas pela evolução dos arquivos). Daqui em diante: **toda mudança de Modelfile ganha entrada aqui** — em especial trocas de FROM, mudanças de parâmetro e resultados de testes A/B (três coisas que a linhagem perdeu por não registrar).
+## 1.2.3 - production state becomes a command, and the gitlink to an abandoned repo leaves the index
+
+Findings **G-50**, **G-51** and **G-52** of the 01/09/2026 technical review.
+
+### G-52 · the v8 → v9 rollout had no record of completion
+
+The README states that production runs **v8, with a known bug in Code mode** (`num_ctx 4096`
+→ silent truncation of 15-31k token requests), and no document in either repository says
+"Phase 2 done on DD/MM". There are only two readings, and they are very different: either
+the rollout happened and nobody recorded it, or **the oldest documented bug in the product
+has been in production since July**.
+
+**What could be measured from here** (02/09): the `.env` of the SHVIA-WEB development
+checkout does not set `OLLAMA_PRESERVE_MODELFILE_SYSTEM`, so it defaults to `true` — the
+pre-v9 behaviour. The GPU **could not be queried**: the host slot is empty in that `.env`,
+which is a development one. Production state remains **unmeasured**, and that is written
+down as such.
+
+⚠️ **One commit in the log looks like a rollout record and is not.** `1.1.1 - num_ctx 32768:
+produção registrada` (30/07) measured Ollama and the V100 driver in order to **justify 32768
+in the v9 Modelfile** — it touches the Modelfile and the docs, not production. Reading only
+the subject leads to the opposite conclusion; the commit body had to be opened.
+
+**`scripts/estado-da-producao.sh`** answers the question in one command, against the real
+machine. It measures **both** sides — the GPU's `num_ctx` and the app's switch — because a
+half-done rollout is the worst state: each half looks right on its own. And it distinguishes
+**"I did not measure" from "I measured and it is wrong"**, which is the confusion that turns
+uncertainty into false certainty. All four verdicts were exercised against a fake Ollama, and
+so were the two refusal paths (no host, unreachable host).
+
+### G-50 · `IA-MODELFILES/` was a gitlink with no `.gitmodules`, pointing at a repo declared abandoned
+
+Mode `160000` in the index and no `.gitmodules`: a `git clone` created the folder **empty**,
+and the local content was invisible to git from outside. The folder does not even have a
+`.git` inside — it is not so much as a nested checkout.
+
+**Measured before removing it:** the **eleven** Modelfiles there already exist in this
+repository, **byte for byte** (`modelfiles/archive/`, `modelfiles/shana/`,
+`modelfiles/tools/`). The only unique files were `README.md` and `version.md` — belonging to
+the OTHER repository. Removing the pointer lost nothing, and that is a `diff`'s conclusion,
+not a reading's.
+
+The gitlink left the index (`git rm --cached`) and the path entered `.gitignore` with the
+reason. **The folder stays on disk** for whoever already had it: deleting it is the owner's
+decision, not mine.
+
+### G-51 · no `version.md`
+
+The repository used the house convention in its commit messages (`1.1.1 - …`) and did not
+have the file. The four commits since 1.1.1 went out with no version; this delivery resumes
+at **1.2.3** because it brings a new capability (the measurement script).
+
 
 ## 1.2.2 - Agent doc: Releases rule and the English-only language rule
 

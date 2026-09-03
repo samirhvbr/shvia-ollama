@@ -1,3 +1,14 @@
 models
 configs/
 backup*
+
+# Resto do repositório AI-MODELFILES, declarado abandonado (achado G-50 da revisão de
+# 01/09/2026). Estava registrado como **gitlink** (modo 160000) sem `.gitmodules`: um
+# `git clone` criava a pasta VAZIA, e o conteúdo local era invisível ao git de fora.
+#
+# Medido antes de tirar: os **onze** Modelfiles dali já existem neste repositório, byte a
+# byte (`modelfiles/archive/`, `modelfiles/shana/`, `modelfiles/tools/`). Únicos eram só o
+# `README.md` e o `version.md` — do OUTRO repo. Remover o ponteiro não perdeu nada.
+#
+# A pasta continua no disco de quem já a tinha; apagá-la é decisão do dono.
+IA-MODELFILES/

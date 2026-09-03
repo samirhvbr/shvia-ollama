@@ -16,6 +16,37 @@ RAG (ver [docs/ARQUITETURA-CAMADAS.md](docs/ARQUITETURA-CAMADAS.md)).
   [docs/ARQUITETURA-CAMADAS.md §6](docs/ARQUITETURA-CAMADAS.md) — app primeiro,
   modelo depois.
 
+> ### 📍 Estado do rollout — medido em 02/09/2026 (achado G-52)
+>
+> **Não há registro de conclusão em nenhum dos dois repositórios**, e o que se pôde medir
+> desta máquina aponta para o rollout **não ter acontecido**:
+>
+> - o `.env` do checkout de desenvolvimento do SHVIA-WEB **não define**
+>   `OLLAMA_PRESERVE_MODELFILE_SYSTEM` nem `OLLAMA_SYSTEM_PROMPT_FILE`, então vale o default
+>   do código — `preserve_modelfile_system = true`, o comportamento **pré-v9**;
+> - a GPU **não pôde ser consultada daqui**: o slot `OLLAMA_REMOTE_HOST_1` está vazio nesse
+>   `.env`, que é de desenvolvimento. O estado da produção segue **não medido**.
+>
+> ⚠️ **Um commit do log parece um registro de rollout e não é.** O `1.1.1 - num_ctx 32768:
+> produção registrada (30/07)` mediu a versão do Ollama e o driver do V100 para **justificar
+> o 32768 no Modelfile v9** — ele muda `ShvIA_v9.Modelfile` e docs, não a produção. Ler só o
+> título do commit leva à conclusão oposta.
+>
+> **Para responder de vez, um comando:**
+>
+> ```bash
+> OLLAMA_HOST=http://<gpu>:11434 SHVIA_WEB_ENV=/caminho/SHVIA-WEB/.env \
+>   ./scripts/estado-da-producao.sh
+> ```
+>
+> Ele mede os **dois** lados — o `num_ctx` que a GPU serve e o interruptor do app — porque um
+> rollout pela metade é o pior estado: cada metade parece certa sozinha. E ele distingue
+> "não medi" de "medi e está errado".
+>
+> **Seja qual for a resposta, ela precisa virar registro aqui e no `docs/INFRA` do
+> SHVIA-WEB, com data.** Foi a ausência desse registro que criou este achado — e enquanto
+> ela durar, a doc afirma que produção roda um modelo com bug conhecido desde julho.
+
 ```bash
 ./scripts/build.sh                       # cria ShvIA:v9 a partir do Modelfile v9
 ./scripts/build.sh <Modelfile> <tag>     # build de qualquer outro
