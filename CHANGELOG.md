@@ -2,6 +2,15 @@
 
 Histórico reconstruído na auditoria de 2026-07-29 (o repositório git começa em 2026-07-30; as versões anteriores foram datadas pela evolução dos arquivos). Daqui em diante: **toda mudança de Modelfile ganha entrada aqui** — em especial trocas de FROM, mudanças de parâmetro e resultados de testes A/B (três coisas que a linhagem perdeu por não registrar).
 
+## 1.2.1 - Regra de Releases no doc de agente: bump e Release sao um ato so
+
+Eco marcado da norma unica em samirhvbr/repodocs (docs/versioning.md). O
+`version.md` da branch padrao NO GITHUB e o que as Releases no GitHub mostram, e
+um commit que bumpa o `version.md` nao esta terminado ate aquela versao ter tag,
+Release e o badge `Latest`.
+
+Bloco delimitado por marcador: rodar de novo substitui, nao duplica.
+
 ## [v9] — 2026-07-29 — MOTOR GENÉRICO (arquitetura em camadas)
 
 **Mudança estrutural:** o Modelfile deixa de carregar a persona. Vira motor neutro; a persona Anna (Chat) e o protocolo de agente (Code) passam a ser injetados pelo app como `role:system` por requisição, e os fatos institucionais/de cliente migram para RAG.
