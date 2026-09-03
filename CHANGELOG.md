@@ -1,5 +1,20 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.2.4 - COMMIT-RULE: the agent commits, and nothing is finished until it is committed
+
+This repository's agent instructions never said who commits or when. That was
+survivable while the COMMITTER skill was running the cycle; it is not now that
+the skill is off across the fleet (03/09/2026), because nothing downstream
+packages the work any more.
+
+Adds the `COMMIT-RULE` echo block, whose single source is
+[samirhvbr/repodocs `docs/versioning.md`](https://github.com/samirhvbr/repodocs/blob/master/docs/versioning.md#who-commits-and-when)
+(ADR-016 there): the agent commits, nothing is reported as finished until it is
+committed, one subject per commit, and a large delivery is split into blocks
+grouped by subject. The block is delimited and regenerable, so a later
+correction to the rule is one fleet pass rather than an archaeology.
+
+
 ## 1.2.3 - production state becomes a command, and the gitlink to an abandoned repo leaves the index
 
 Findings **G-50**, **G-51** and **G-52** of the 01/09/2026 technical review.
