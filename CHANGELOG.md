@@ -2,6 +2,19 @@
 
 Histórico reconstruído na auditoria de 2026-07-29 (o repositório git começa em 2026-07-30; as versões anteriores foram datadas pela evolução dos arquivos). Daqui em diante: **toda mudança de Modelfile ganha entrada aqui** — em especial trocas de FROM, mudanças de parâmetro e resultados de testes A/B (três coisas que a linhagem perdeu por não registrar).
 
+## 1.2.2 - Agent doc: Releases rule and the English-only language rule
+
+Marked echo of the single source at samirhvbr/repodocs. Two rules land here:
+
+1. The `version.md` of the default branch ON GITHUB is what the GitHub Releases
+   show, and a commit that bumps it is not finished until that version has a
+   tag, a Release and the `Latest` badge — same push, not "later".
+2. Everything in this repository is English (US): documents, commit messages,
+   pull requests, issues, code comments. The only carve-out is end-user-facing
+   product strings. History is not rewritten.
+
+Delimited by a marker, so re-running replaces instead of duplicating.
+
 ## 1.2.1 - Regra de Releases no doc de agente: bump e Release sao um ato so
 
 Eco marcado da norma unica em samirhvbr/repodocs (docs/versioning.md). O
