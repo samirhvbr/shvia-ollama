@@ -1,5 +1,42 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.2.9 - record that the truncate:false prohibition has not held since August
+
+`f150`. `docs/ARQUITETURA-CAMADAS.md` says, in two places and with all the letters, that
+`truncate:false` **does not enter Phase 1** and must ship *"somente junto com o tratamento
+do 400 (§4)"*. Measured against `SHVIA-WEB` at `a4f651e4`:
+
+| what the page says | what runs |
+|---|---|
+| not before Phase 2 | `OllamaDriver.php:157-159` sends `truncate:false` on **every** `/api/chat` call |
+| — | `config/ollama.php:225` defaults `OLLAMA_TRUNCATE_STRICT` to **`true`** |
+| — | arrived in `70bc2ae3` (2.93.5, **2026-08-08**) — ten days after this page was written |
+| only together with the §4 400 handling | **the handling does not exist** |
+
+### The half that needs no GPU
+
+The pairing requirement is violated on its own terms, and a checkout is enough to see it:
+the SSE `error` event carries `message` and `codigo` and **no `status`**
+(`ChatController.php:1365`), and nothing in `ChatService` or `OllamaDriver` retries or
+compacts on a context-overflow 400. So whatever the GPU serves, `truncate:false` shipped
+without the thing this page says it must never ship without.
+
+### The half that cannot be decided from here
+
+Whether the flag is currently *harmful* depends on `num_ctx`. Either every Code turn over
+~4k has been returning a hard 400 since August, or Phase 2 happened and nobody wrote it
+down — and this page has been describing a state that does not exist for six weeks. Both
+readings are bad; they are bad in opposite directions, and guessing between them is what
+produced this finding in the first place.
+
+🔒 **`scripts/estado-da-producao.sh` answers it in one command, against the real machine,
+and it has to be run by someone who reaches the GPU.** That script already exists for
+exactly this question. This entry does not run it and does not guess: it makes the page
+stop claiming to describe production until somebody does.
+
+⚠️ **Nothing was flipped.** Changing `truncate_strict` without knowing `num_ctx` would be
+choosing between a hard 400 and silent truncation by coin toss.
+
 ## 1.2.8 - delete the Shana v2.3 copy, and refuse an undeclared duplicate Modelfile
 
 `f154`. `modelfiles/shana/Shana-v2.3.Modelfile` was byte-for-byte `Shana-v2.2.Modelfile`
