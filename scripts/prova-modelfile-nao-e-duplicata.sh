@@ -28,7 +28,13 @@ command -v md5sum >/dev/null 2>&1 || { echo "prova-modelfile: no md5sum — did 
 [ -d modelfiles ] || { echo "prova-modelfile: no modelfiles/ — did not measure." >&2; exit 2; }
 [ -f "$LISTA" ] || { echo "prova-modelfile: no $LISTA — did not measure." >&2; exit 2; }
 
-mapfile -t ARQUIVOS < <(git ls-files 'modelfiles/**' | grep -i 'modelfile' | sort)
+# ⚠️ `\.Modelfile$` and NOT `grep -i modelfile`: the directory is called `modelfiles/`,
+# so a name filter matches every path inside it — the first version of this ruler was
+# sweeping `modelfiles/README.md` and this ruler's own allowlist, reported 26 files where
+# there are 24, and would have called two identical DOCS a duplicate Modelfile.
+# Measured 2026-09-22: every tracked Modelfile in this repository ends in `.Modelfile`,
+# and none lives outside `modelfiles/`.
+mapfile -t ARQUIVOS < <(git ls-files | grep -E '\.Modelfile$' | sort)
 if [ "${#ARQUIVOS[@]}" -eq 0 ]; then
     echo "prova-modelfile: no tracked Modelfile — did not measure." >&2
     exit 2

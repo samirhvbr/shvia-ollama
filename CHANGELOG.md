@@ -1,5 +1,26 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.2.10 - the duplicate ruler matches Modelfiles, not the directory name
+
+The ruler shipped in `1.2.8` selected its input with `git ls-files 'modelfiles/**' | grep
+-i 'modelfile'`. The directory is *called* `modelfiles/`, so the name filter matched
+**every path inside it** — including `modelfiles/README.md` and the ruler's own allowlist.
+
+🔬 **CI is what caught it, one run after the ruler landed**: the job reported *"26
+Modelfile(s)"* where the repository has **24**. The count was the only visible symptom,
+and it would have been easy to read as a stale local number.
+
+The defect was not cosmetic. Two byte-identical **documents** in `modelfiles/` would have
+been reported as a duplicate Modelfile — a guard inventing a finding, which costs more
+than the guard is worth. Now matched by `\.Modelfile$`; measured first that every tracked
+Modelfile here ends in that suffix and none lives outside `modelfiles/`.
+
+| reversal | result |
+|---|---|
+| a fresh copy of v2.2 is added | exit **1** — still caught |
+| a fresh copy of `modelfiles/README.md` is added | exit **0** — a document is not a Modelfile |
+| current tree | exit **0**, **24** Modelfiles, 1 declared, 0 undeclared |
+
 ## 1.2.9 - record that the truncate:false prohibition has not held since August
 
 `f150`. `docs/ARQUITETURA-CAMADAS.md` says, in two places and with all the letters, that
