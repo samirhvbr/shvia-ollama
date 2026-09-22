@@ -11,4 +11,17 @@ backup*
 # `README.md` e o `version.md` — do OUTRO repo. Remover o ponteiro não perdeu nada.
 #
 # A pasta continua no disco de quem já a tinha; apagá-la é decisão do dono.
+#
+# 🔴 Measured 2026-09-22: the sentence above says the pointer was removed. It was NOT.
+# `IA-MODELFILES` stayed in the index as a GITLINK (mode 160000, commit b4444142) with no
+# `.gitmodules` to map it, so every `git submodule` command in this repository failed:
+#
+#     $ git submodule status
+#     fatal: no submodule mapping found in .gitmodules for path 'IA-MODELFILES'
+#
+# A fresh `git clone --recurse-submodules` succeeded but created an EMPTY
+# `IA-MODELFILES/` directory and then failed the same way. `.gitignore` never had a say:
+# it does not apply to a path already tracked, and `git status` stays silent because a
+# gitlink whose commit matches the index reports nothing. Dropped from the index in
+# 1.2.11 — the on-disk folder was not touched.
 IA-MODELFILES/

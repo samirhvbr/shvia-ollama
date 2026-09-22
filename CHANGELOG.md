@@ -1,5 +1,42 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.2.11 - drop the orphaned IA-MODELFILES gitlink, which broke every submodule command
+
+Found while measuring `f156`, and **not** what that finding describes. It calls
+`IA-MODELFILES/` an ignored folder sitting on disk, outside git. It was not outside git.
+
+`IA-MODELFILES` was still in `HEAD` as a **gitlink** — mode `160000`, commit
+`b4444142` — with **no `.gitmodules`** to map it anywhere:
+
+```
+$ git submodule status
+fatal: no submodule mapping found in .gitmodules for path 'IA-MODELFILES'
+```
+
+Measured on a real clean clone, not argued: `git clone --recurse-submodules` succeeds,
+creates an **empty** `IA-MODELFILES/` directory, and then fails the same way on any
+submodule command. That is every clone, for everyone.
+
+### Why nothing ever said so
+
+Three silences stacked. `.gitignore` has no say over a path that is already tracked, so
+the entry added in `f00e41b` did nothing to it. `git status` reports nothing, because a
+gitlink whose commit matches the index is clean by definition. And the `.gitignore`
+comment states, in the past tense, that *"remover o ponteiro não perdeu nada"* — so the
+one document that discusses this claims the removal already happened. Reading it was
+worse than not reading it.
+
+`git rm --cached` drops the index entry and does not touch the working tree; the eleven
+Modelfiles on disk are still there, verified after the fact.
+
+### 🔒 What this does NOT do
+
+It does not delete `~/x/SHVIA/SHVIA-OLLAMA/IA-MODELFILES/`, which is what `f156` actually
+asks about. That folder is **untracked**, so deleting it is not recoverable through git,
+and its `README.md` and `version.md` are the only two files in it without a byte-identical
+twin in this repository. Irreversible deletion is the owner's call, and the comment above
+already says so.
+
 ## 1.2.10 - the duplicate ruler matches Modelfiles, not the directory name
 
 The ruler shipped in `1.2.8` selected its input with `git ls-files 'modelfiles/**' | grep
