@@ -1,0 +1,54 @@
+# The repository's mechanical rulers, on every push and pull request.
+#
+# ## Why this file exists
+#
+# `.github/workflows/` held only `release.yml`, which publishes a Release when
+# `version.md` moves and checks nothing. So a guard added here would have had CONTENT and
+# no TRIGGER — and a guard that never runs protects zero. That is the house's §13, and it
+# is the reason the ruler and this file land in the same commit.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reguas:
+    name: Rulers
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned by SHA, not by tag: a moving tag is a dependency somebody else can rewrite
+      # after review. The comment carries the human-readable version.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+
+      # Every executable ruler in scripts/, so adding one does not mean editing this file
+      # and remembering to. Exit 2 means "could not measure" and is a failure here:
+      # a guard that cannot measure must never read as a guard that found nothing.
+      - name: Run every prova-*.sh
+        run: |
+          shopt -s nullglob
+          reguas=(scripts/prova-*.sh)
+          if [ ${#reguas[@]} -eq 0 ]; then
+            echo "::error::no scripts/prova-*.sh found — this job would pass by measuring nothing"
+            exit 2
+          fi
+          falhou=0
+          for r in "${reguas[@]}"; do
+            echo "── $r"
+            if bash "$r"; then
+              echo "   ok"
+            else
+              rc=$?
+              echo "::error::$r exited $rc"
+              falhou=1
+            fi
+          done
+          exit $falhou

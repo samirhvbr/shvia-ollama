@@ -1,5 +1,54 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.2.8 - delete the Shana v2.3 copy, and refuse an undeclared duplicate Modelfile
+
+`f154`. `modelfiles/shana/Shana-v2.3.Modelfile` was byte-for-byte `Shana-v2.2.Modelfile`
+(md5 `2a14097f97f440eebe6f6170b77f7ff1` on both).
+
+### It was born a copy — nothing was lost
+
+The open question was whether v2.3 ever had content of its own that a later commit
+overwrote. It did not, and git answers it flatly: the file has **one** commit in its whole
+history, `1ebc20e "Nova versao"` (2026-08-04), and it was **already identical to v2.2 in
+that commit**. There is no lost version to reconstruct.
+
+What it cost was real anyway: whoever promoted "v2.3" would ship v2.2 believing they were
+shipping a change, and the catalogue in `modelfiles/README.md` stopped at v2.2 — the
+repository disagreed with its own directory listing and nothing noticed.
+
+### The guard, with an allowlist
+
+`scripts/prova-modelfile-nao-e-duplicata.sh` fails on any byte-identical pair of tracked
+Modelfiles that is not named in `modelfiles/duplicatas-declaradas.txt`. Exit codes follow
+the house convention — **0** clean, **1** found one, **2** could not measure.
+
+⚠️ **An allowlist and not a blanket ban**, because one duplicate here is deliberate and
+documented: `archive/ShvIA_qwen.Modelfile` is the archived byte-copy of
+`tools/SShvTerm.Modelfile`, and both `modelfiles/README.md:49` and `CHANGELOG.md:184` say
+so. A guard that cannot tell a declared copy from an accidental one is a guard somebody
+switches off.
+
+🔬 **The second pair was found by the guard, not by the finding.** The finding named only
+Shana; sweeping all 26 tracked Modelfiles by md5 turned up `ShvIA_qwen`/`SShvTerm` as well,
+and reading the catalogue is what showed it was intentional. Measuring the whole set was
+cheaper than trusting the one pair somebody had already noticed.
+
+| reversal | result |
+|---|---|
+| the allowlist file is absent | exit **2** — did not measure |
+| the declared pair loses its line | exit **1**, naming `ShvIA_qwen`/`SShvTerm` |
+| a fresh copy of v2.2 is added | exit **1**, naming it |
+| current tree | exit **0**, 25 Modelfiles, 1 declared, 0 undeclared |
+
+### And a trigger, in the same commit
+
+`.github/workflows/` held only `release.yml`, which publishes a Release and checks
+nothing. A ruler added here would have had content and no trigger, which protects zero.
+`ci.yml` runs **every** `scripts/prova-*.sh` on push and pull request — globbed, so adding
+a ruler does not mean remembering to edit the workflow — and fails the job when the glob
+matches nothing, because a job that passes by measuring nothing is the failure mode the
+whole convention exists to avoid.
+
 ## 1.2.7 - the git hooks arrive from repodocs and are enabled here
 
 Both hooks of the standard now run here: `commit-msg`, which checks the shape of

@@ -1,0 +1,11 @@
+# Modelfile pairs that are byte-identical ON PURPOSE, one pair per line, two paths.
+#
+# `scripts/prova-modelfile-nao-e-duplicata.sh` fails on any identical pair NOT listed
+# here. Adding a line is a decision: it says this copy is deliberate and the catalogue
+# explains it. If you are adding a line to quiet the guard, delete the file instead.
+
+# The archived terminal assistant. `modelfiles/README.md:49` calls it "Duplicata
+# byte-a-byte do SShvTerm com `Reasoning: low` alheio", and CHANGELOG.md:184 records that
+# `ShvIA_qwen` "era duplicata e foi arquivado". Kept as the lineage's record, not as a
+# model anyone should build.
+modelfiles/archive/ShvIA_qwen.Modelfile modelfiles/tools/SShvTerm.Modelfile

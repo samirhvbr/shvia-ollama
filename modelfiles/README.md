@@ -63,4 +63,5 @@ Revisado em 2026-07-29 (auditoria completa das 20 versões — ver [../docs/DIAG
 3. **Testes A/B sem registro do resultado** — v2.3/v2.4 e Shana v2.0/v2.1 são pares A/B cujo vencedor nunca foi anotado. Registrar no CHANGELOG.
 4. **Placeholders `[PREENCHA]` indo para produção** — o modelo recebe o placeholder como texto e pode citá-lo ao usuário (Anna-v1.0, bk.Anna, Dev).
 5. **Versão nova por diff de 1 linha** — v3→v4 gastou uma versão num rename. Usar o CHANGELOG para mudanças pequenas.
+   🔴 **E por diff de ZERO linhas, medido em 22/09/2026:** `Shana-v2.3.Modelfile` era cópia byte-a-byte da v2.2. Tinha **um** commit em toda a história (`1ebc20e "Nova versao"`) e já nasceu idêntica — nada próprio foi sobrescrito. Quem promovesse "a v2.3" subiria a v2.2 acreditando estar subindo mudança. Apagada; agora `scripts/prova-modelfile-nao-e-duplicata.sh` recusa duplicata que não esteja declarada em `modelfiles/duplicatas-declaradas.txt`.
 6. **Regressão silenciosa de parâmetro** — v7 (16384) → v8 (4096) sem registro: foi a causa-raiz do bug do modo Code.
