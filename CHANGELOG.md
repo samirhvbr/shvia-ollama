@@ -1,5 +1,41 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.2.12 - measure the rollout: the GPU serves v9 since July, the app is still pre-v9
+
+`f150`, closed. The owner authorized the measurement over SSH, and it settles what no checkout
+could.
+
+| side | measured on 2026-09-23 | verdict |
+|---|---|---|
+| GPU — `ShvIA:latest` | `num_ctx 32768`, `num_batch 256`, `temperature 1`, `repeat_penalty 1`, modified **2026-07-30** | **v9**, parameter for parameter |
+| app — `/srv/shvia` at `2.110.433` | `preserve_modelfile_system = true`, `truncate_strict = true` | **pre-v9** |
+
+`scripts/estado-da-producao.sh` has a name for that combination: *"rollout pela METADE — o
+pior estado, porque cada metade parece certa sozinha"*.
+
+### What it costs, and what it does not
+
+- ✅ **`truncate:false` is safe.** With `num_ctx 32768` the 15–31k Code requests fit. The
+  hard-400-at-4k scenario this repository warned about is not happening.
+- 🔴 **The Code protocol has no system authority.** With `preserve=true` the driver folds the
+  app's system message into the first user turn and keeps the Modelfile's SYSTEM — which under
+  v9 is only the **neutral fallback**. That authority was the gain Phase 1 promised.
+
+Closing it is `OLLAMA_PRESERVE_MODELFILE_SYSTEM=false` in production — the owner's call.
+
+### ⚠️ This corrects a note in this repository
+
+The 2026-09-02 README said commit `1.1.1 - num_ctx 32768: produção registrada (30/07)` *"looks
+like a rollout record and is not"*. **It was one** — the GPU's model was modified that day. The
+note read the commit's diff, which only touched the v9 Modelfile and docs, and concluded nothing
+happened on the machine. But `ollama create` leaves no trace in a repository: **a repo cannot
+prove what a server does.** The same README had the command that could, and it went unrun for
+three weeks.
+
+🔬 Read through the app server, not the GPU host: `shvia1` refuses this machine's key, and
+`shvia-site` reaches the GPU the way production does — the only server the app declares is
+`srv1`.
+
 ## 1.2.11 - drop the orphaned IA-MODELFILES gitlink, which broke every submodule command
 
 Found while measuring `f156`, and **not** what that finding describes. It calls

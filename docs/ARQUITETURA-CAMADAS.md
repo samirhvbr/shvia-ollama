@@ -104,7 +104,7 @@ comportamento desejado nos dois modos**:
 | **NUNCA enviar `num_ctx`** por requisição | Valor diferente do carregado dispara reload completo (`sched.go/needsReload`). `num_ctx` vive só no Modelfile (32768). Idem **`shift`**: no Ollama 0.32.x, alternar `shift` por request também dispara reload — não enviar. |
 | Chat | `options: { "num_predict": 2048 }` — sampling herdado do Modelfile (calibração Gemma 4). |
 | Code | `options: { "num_predict": 4096 }` — teto explícito por modo em vez do default global do app (8192): com `num_ctx 32768`, prompt de até ~28k + 4096 de saída fecham o orçamento. Temperatura: manter 1.0 herdada (Gemma 4 é exceção à regra "temp baixa p/ código"); A/B via options muda sem reload. |
-| Ambos | `"truncate": false` no **topo** da requisição (não em `options`) → estouro de contexto vira **HTTP 400 visível** em vez de truncamento silencioso. Verificado no código da release estável (`ChatRequest.Truncate`, `routes.go`), mas **não documentado** em `docs/api.md` para `/api/chat` — contrato de código, vigiar em upgrades. **Só ligar na Fase 2** (com o v8 de `num_ctx 4096` ainda ativo, toda requisição Code de 15–31k viraria 400 duro — pior que o bug) e **somente junto com o tratamento do 400** (§4). 🔴 **It has been on by default since 2026-08-08, and the §4 handling does not exist — see the measured note in §4 before trusting this row.** Nota de compat: atinge também `/agent/chat` (contrato público) — comunicar a integradores que dependiam do truncamento silencioso. |
+| Ambos | `"truncate": false` no **topo** da requisição (não em `options`) → estouro de contexto vira **HTTP 400 visível** em vez de truncamento silencioso. Verificado no código da release estável (`ChatRequest.Truncate`, `routes.go`), mas **não documentado** em `docs/api.md` para `/api/chat` — contrato de código, vigiar em upgrades. **Só ligar na Fase 2** (com o v8 de `num_ctx 4096` ainda ativo, toda requisição Code de 15–31k viraria 400 duro — pior que o bug) e **somente junto com o tratamento do 400** (§4). 🔴 **On by default since 2026-08-08; safe in production because the GPU serves `num_ctx 32768` (measured 2026-09-23). The §4 status-and-code half shipped in SHVIA-WEB #306; retry-with-compaction is still open.** Nota de compat: atinge também `/agent/chat` (contrato público) — comunicar a integradores que dependiam do truncamento silencioso. |
 | `num_predict` por modo | **Exige encanamento novo**: nenhum caller passa `options.max_tokens` hoje (o driver cai no default global 8192, `OllamaDriver.php:112-117`). Adicionar a passagem por modo (Chat 2048 / Code 4096) na Fase 1 — via env global não dá, afetaria os dois modos igualmente. |
 | `keep_alive` | O app manda `"30m"` hardcoded via cast em `OllamaDriver.php:105`, que **derruba** o `OLLAMA_KEEP_ALIVE=-1` do systemd (o modelo descarrega após 30 min ociosos apesar do preload). **Cuidado:** o cast `(string)` do driver transformaria `-1` em `"-1"`, que o `time.ParseDuration` do Ollama rejeita (400 em tudo). Correção certa: **omitir o campo** quando a config estiver vazia (o env do servidor manda — mais limpo, o systemd já tem `-1`); alternativa: `is_numeric($ka) ? (int)$ka : (string)$ka`. |
 
@@ -229,24 +229,15 @@ do 400 já estiver deployado.
 > or `OllamaDriver` retries or compacts on a context-overflow 400. So the pairing this
 > page requires was never delivered — that half needs no measurement on the GPU.
 >
-> **What still cannot be answered from a checkout** is whether the flag is currently
-> *harmful*, because that depends on what the GPU actually serves:
+> **Measured on 2026-09-23 — the open half is now answered** (see the README for the numbers).
+> The GPU serves **v9** (`num_ctx 32768`) and has since **2026-07-30**. So `truncate:false` is
+> **not** causing hard 400s: 15–31k Code requests fit. But the app runs
+> `preserve_modelfile_system = true` in production, so the rollout is **half done** — the
+> Code-mode protocol reaches the model folded into the first user turn, **without system
+> authority**, because v9's Modelfile SYSTEM is only the neutral fallback.
 >
-> | if `ShvIA:latest` serves | then, since 2026-08-08 |
-> |---|---|
-> | `num_ctx 4096` (the v8 this README claims) | every Code turn over ~4k has returned a hard 400, with no retry and no compaction, and the `anna` client prints an error without `status` and ends the turn |
-> | `num_ctx 32768` (the v9) | Phase 2 effectively happened and was never written down — and this page has been describing a state that does not exist for six weeks |
->
-> 🔒 **One command decides it, and it has to be run by someone who reaches the machine:**
->
-> ```bash
-> OLLAMA_HOST=http://<gpu>:11434 ./scripts/estado-da-producao.sh
-> ```
->
-> **Until it is run, this page must not be read as describing what runs.** It describes
-> what was planned. The gap between the two is exactly what this note exists to stop
-> anyone from crossing by accident — including the next reader who finds the prohibition
-> above and assumes it is in force.
+> **Phase 1 as this page defines it is therefore not complete.** What finishes it is
+> `OLLAMA_PRESERVE_MODELFILE_SYSTEM=false` in production — a production act, the owner's call.
 
 **Seguro com o v8 ainda ativo:** o system da requisição SUBSTITUI o SYSTEM do
 Modelfile, então o Chat mantém a Anna (agora vinda do app) e o Code **já

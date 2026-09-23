@@ -7,34 +7,53 @@ RAG (ver [docs/ARQUITETURA-CAMADAS.md](docs/ARQUITETURA-CAMADAS.md)).
 
 ## TL;DR
 
-- **Produção atual:** `ShvIA:latest` ← `modelfiles/active/ShvIA_v8.Modelfile`
-  (persona Anna no Modelfile, `num_ctx 4096`) — **com bug conhecido no modo
-  Code** ([diagnóstico](docs/DIAGNOSTICO-BUG-ANNA-CODE.md)).
-- **Próxima produção:** `ShvIA:v9` ← `modelfiles/active/ShvIA_v9.Modelfile`
-  (motor genérico, `num_ctx 32768`, calibração Gemma 4). **Requer as mudanças
-  no SHVIA-WEB e o rollout sequenciado** de
-  [docs/ARQUITETURA-CAMADAS.md §6](docs/ARQUITETURA-CAMADAS.md) — app primeiro,
-  modelo depois.
+- **In production:** `ShvIA:latest` is the **v9** engine — `num_ctx 32768`, calibrated for
+  Gemma 4 — and has been **since 2026-07-30**. Measured on 2026-09-23 (below).
+- 🔴 **But the app side is still pre-v9** (`preserve_modelfile_system = true`), so the rollout
+  of [docs/ARQUITETURA-CAMADAS.md §6](docs/ARQUITETURA-CAMADAS.md) is **half done** — the
+  worst state, because each half looks right on its own.
 
-> ### 📍 Estado do rollout — medido em 02/09/2026 (achado G-52)
+> ### 📍 Rollout state — MEASURED 2026-09-23 against the real machines
 >
-> **Não há registro de conclusão em nenhum dos dois repositórios**, e o que se pôde medir
-> desta máquina aponta para o rollout **não ter acontecido**:
+> Measured from the app server (`shvia-site`), which reaches the GPU the app actually uses
+> (`srv1`); the GPU host itself refuses this machine's key, so it was read through the app,
+> exactly as production reads it.
 >
-> - o `.env` do checkout de desenvolvimento do SHVIA-WEB **não define**
->   `OLLAMA_PRESERVE_MODELFILE_SYSTEM` nem `OLLAMA_SYSTEM_PROMPT_FILE`, então vale o default
->   do código — `preserve_modelfile_system = true`, o comportamento **pré-v9**;
-> - a GPU **não pôde ser consultada daqui**: o slot `OLLAMA_REMOTE_HOST_1` está vazio nesse
->   `.env`, que é de desenvolvimento. O estado da produção segue **não medido**.
+> **The model side — v9, since 2026-07-30.** `ollama show ShvIA:latest` returns:
 >
-> ⚠️ **Um commit do log parece um registro de rollout e não é.** O `1.1.1 - num_ctx 32768:
-> produção registrada (30/07)` mediu a versão do Ollama e o driver do V100 para **justificar
-> o 32768 no Modelfile v9** — ele muda `ShvIA_v9.Modelfile` e docs, não a produção. Ler só o
-> título do commit leva à conclusão oposta.
+> ```
+> num_batch 256 · num_ctx 32768 · num_predict -1 · repeat_penalty 1
+> temperature 1 · top_k 64 · top_p 0.95 · SYSTEM present · modified 2026-07-30
+> ```
 >
-> **Para responder de vez, um comando:**
+> That matches `ShvIA_v9.Modelfile` parameter for parameter, and **not** v8 (which would be
+> `num_ctx 4096`, `repeat_penalty 1.10`, `temperature 0.85`, no `num_batch`).
 >
-> ```bash
+> **The app side — still pre-v9.** In production (`/srv/shvia`, at `2.110.433`):
+> `ollama.preserve_modelfile_system = true`, `ollama.truncate_strict = true`.
+>
+> 🔴 **What that combination costs.** With `preserve=true` the driver **folds** the app's system
+> message into the first user turn and keeps the Modelfile's SYSTEM in force. Under v8 that
+> SYSTEM was the Anna persona, so preserving it made sense. **Under v9 the Modelfile's SYSTEM is
+> the neutral fallback** — so today the Code-mode protocol reaches the model **without system
+> authority**, which is precisely the gain Phase 1 was meant to deliver.
+>
+> ✅ **What it does NOT cost:** `truncate:false` (on since 2026-08-08) is safe. With
+> `num_ctx 32768`, Code requests of 15–31k tokens fit; the hard-400-at-4k scenario that
+> `ARQUITETURA-CAMADAS.md` warned about does not happen.
+>
+> ⚠️ **The 2026-09-02 note here was wrong, and in the direction that matters.** It said the
+> commit `1.1.1 - num_ctx 32768: produção registrada (30/07)` *"looks like a rollout record and
+> is not"*. **It was one:** the model on the GPU was modified that same day and serves exactly
+> that engine. The note read the commit's diff (it only touched the v9 Modelfile and docs) and
+> concluded nothing happened on the machine — but `ollama create` leaves no trace in a repo.
+> **A repository cannot prove what a server does; only the server can.** That is the whole
+> reason `scripts/estado-da-producao.sh` exists, and it is the command that settled this.
+>
+> **Closing the rollout** is one line in production — `OLLAMA_PRESERVE_MODELFILE_SYSTEM=false`
+> in `/srv/shvia/.env` — and it is a production act, so it is the owner's call.
+
+```bash
 > OLLAMA_HOST=http://<gpu>:11434 SHVIA_WEB_ENV=/caminho/SHVIA-WEB/.env \
 >   ./scripts/estado-da-producao.sh
 > ```
