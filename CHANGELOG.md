@@ -1,5 +1,15 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.0 - CI runs on the self-hosted runner cicd while the repository variable CI_RUNNER names it
+
+The account's GitHub Actions budget ran out on 25/09/2026, and since then this private repository's jobs
+fail in seconds with zero steps. Every Linux job now reads
+`runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}`. With the repository variable `CI_RUNNER=shvia-ci`
+it runs on `cicd`, the self-hosted runner set up on 28/09/2026 (its runbook is SHVIA-WEB
+`deploy/servidor-cicd.md`). Deleting the variable moves it back to GitHub-hosted runners.
+
+The version jumps to 1.3.0, as the owner asked on 25/09/2026 for the next commit of each repository.
+
 ## 1.2.12 - measure the rollout: the GPU serves v9 since July, the app is still pre-v9
 
 `f150`, closed. The owner authorized the measurement over SSH, and it settles what no checkout
