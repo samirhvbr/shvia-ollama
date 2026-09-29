@@ -23,7 +23,7 @@ concurrency:
 jobs:
   reguas:
     name: Rulers
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}   # self-hosted cicd when CI_RUNNER is set (SHVIA-WEB deploy/servidor-cicd.md)
     steps:
       # Pinned by SHA, not by tag: a moving tag is a dependency somebody else can rewrite
       # after review. The comment carries the human-readable version.
