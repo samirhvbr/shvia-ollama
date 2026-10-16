@@ -1,13 +1,16 @@
 # Catálogo de Modelfiles
 
 Inventário completo, com status e o motivo de cada arquivo existir.
-Revisado em 2026-07-29 (auditoria completa das 20 versões — ver [../docs/DIAGNOSTICO-BUG-ANNA-CODE.md](../docs/DIAGNOSTICO-BUG-ANNA-CODE.md)).
+Original lineage audit: July 29, 2026. Inventory checked October 15, 2026:
+24 definitions. The historical defect analysis below is retained; deployment
+status comes from dated measurements, not directory names. See the
+[operating guide](../docs/operations.md).
 
 ## Estrutura
 
 | Pasta | Significado |
 |---|---|
-| `active/` | O que roda em produção agora (v8) + a próxima versão (v9). **Só aqui pode haver Modelfile apontado por `ollama create` em produção.** |
+| `active/` | Current build definitions: v9 is the default candidate; v8 is retained. Directory membership does not prove a deployed tag. |
 | `tools/` | Assistentes utilitários vivos, mas fora do fluxo principal (dev, terminal). |
 | `shana/` | Persona pessoal Shana (uso pessoal, fora de produção Blue3). |
 | `archive/` | Superseded. Mantidos por histórico; **não usar** — os defeitos de cada um estão listados abaixo. |
@@ -16,8 +19,8 @@ Revisado em 2026-07-29 (auditoria completa das 20 versões — ver [../docs/DIAG
 
 | Arquivo | Base | Params-chave | Status |
 |---|---|---|---|
-| `ShvIA_v9.Modelfile` | gemma4:26b-a4b-it-qat | ver comentários no arquivo | **Próxima produção.** Motor genérico sem persona — a persona vem do app (ver [../docs/ARQUITETURA-CAMADAS.md](../docs/ARQUITETURA-CAMADAS.md)) |
-| `ShvIA_v8.Modelfile` | gemma4:26b-a4b-it-qat | temp 0.85 · num_ctx **4096** | **Produção atual (`ShvIA:latest`), com bug conhecido.** Persona Anna completa + 5 linhas de "SERVIDOR TERMINAL" coladas no fim. O `num_ctx 4096` regrediu dos 16384 do v7 e causa o bug do modo Code (truncamento silencioso). Substituir pela v9. |
+| `ShvIA_v9.Modelfile` | gemma4:26b-a4b-it-qat | ver comentários no arquivo | **Default build input.** Neutral engine; application supplies persona. Matched `ShvIA:latest` in the [September 23 observation](../docs/rollout-observation-20260923.md); not remeasured today. |
+| `ShvIA_v8.Modelfile` | gemma4:26b-a4b-it-qat | temp 0.85 · num_ctx **4096** | **Retained legacy definition.** Embedded Anna persona and terminal instructions; context regressed from v7. It is not evidence of what `ShvIA:latest` serves today. |
 
 ## tools/
 

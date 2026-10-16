@@ -1,5 +1,11 @@
 # Arquitetura em camadas — motor (Modelfile) · persona (app) · fatos (RAG)
 
+> **Historical design/diagnosis.** This page preserves the original analysis and
+> dated amendments. It contains old paths, rollout states and proposed behavior.
+> The [operating guide](operations.md) describes the source reviewed on October 15,
+> 2026; the [dated production observation](rollout-observation-20260923.md) is not
+> a fresh production check.
+
 **Status:** especificado em 2026-07-29, junto com o diagnóstico do bug do modo
 Code ([DIAGNOSTICO-BUG-ANNA-CODE.md](DIAGNOSTICO-BUG-ANNA-CODE.md)). A v9 só
 entrega o benefício completo com as mudanças no SHVIA-WEB descritas aqui —

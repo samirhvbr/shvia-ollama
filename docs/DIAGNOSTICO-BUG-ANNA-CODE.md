@@ -1,5 +1,11 @@
 # Diagnóstico: por que a Anna ignora tarefas de código (modo Code)
 
+> **Historical design/diagnosis.** This page preserves the original analysis and
+> dated amendments. It contains old paths, rollout states and proposed behavior.
+> The [operating guide](operations.md) describes the source reviewed on October 15,
+> 2026; the [dated production observation](rollout-observation-20260923.md) is not
+> a fresh production check.
+
 **Data:** 2026-07-29 · **Sintoma:** no modo Code do ShvIA, o modelo recebe "Leia o TAREFA.md e execute…", faz algumas chamadas de ferramenta e então responde *"Olá! Eu sou a Anna, assistente virtual da Blue3 Internet…"* como se fosse um atendimento de suporte.
 
 **Veredito: não é um bug — são duas causas-raiz que se reforçam, mais três agravantes.** Ambas confirmadas por inspeção do código-fonte (Ollama e SHVIA-WEB).

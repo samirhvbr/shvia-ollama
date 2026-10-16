@@ -1,5 +1,13 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.2 - Document current model operations and dated rollout evidence
+
+Reconcile the README and catalogue with the v9 default build, preserve the
+September production observation as historical evidence, and add an operating
+guide covering current Web integration, validation, promotion and rollback
+boundaries. Record diagnostic-script and reproducibility follow-ups without
+changing scripts, model definitions or production settings.
+
 ## 1.3.1 - the echo blocks are regenerated from repodocs
 
 The marked rules in `CLAUDE.md` and `AGENTS.md` are rewritten from the single
