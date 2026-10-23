@@ -1,5 +1,24 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.3 - Reject unmeasured Ollama diagnostic responses
+
+The production-state diagnostic treated a successful curl transfer as a successful
+model lookup, then searched the entire response for context-looking text. HTTP
+404/500 errors, malformed JSON and prompt text containing `num_ctx 32768` could
+therefore print a green compatibility hint and exit zero.
+
+Require a 2xx response and one valid JSON object, reject API errors and incorrect
+field types, and read exactly one positive `num_ctx` from the API's `parameters`
+string. Missing or invalid context now exits 2 as unmeasured. The diagnostic requires
+`jq` and refuses without it; it does not fall back to text matching. Capacity hints
+no longer identify a smaller model as v8 or claim to prove a rollout or overflow
+behavior. Model identity and live application acceptance remain separate checks.
+
+The new CI-discovered ruler runs Bash and curl against a loopback HTTP server and
+covers HTTP/API/JSON failures, invalid or missing context, optional metadata,
+transport failure, the missing-parser refusal and a disposable application flag.
+No GPU, inference, production configuration or deployment is involved.
+
 ## 1.3.2 - Document current model operations and dated rollout evidence
 
 Reconcile the README and catalogue with the v9 default build, preserve the

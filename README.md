@@ -67,20 +67,24 @@ before promotion.
 | `scripts/atlz.sh` | pull only the fixed Gemma base; does not rebuild custom tags |
 | `scripts/estado-da-producao.sh` | limited read-only model/application observation |
 | `scripts/prova-modelfile-nao-e-duplicata.sh` | check tracked definitions against the declared duplicate list |
+| `scripts/prova-estado-da-producao.sh` | exercise diagnostic responses through a local HTTP server |
 | `.github/workflows/ci.yml` | run `scripts/prova-*.sh` on PRs and master pushes |
 
 ## Validation and contributions
 
 Use Bash 4+ and GNU `md5sum` for the duplicate ruler (the macOS system Bash is
-insufficient). Run:
+insufficient). The diagnostic requires curl and `jq`; its regression ruler also
+requires Python 3's standard library. Run:
 
 ```bash
 bash scripts/prova-modelfile-nao-e-duplicata.sh
-bash -n scripts/build.sh scripts/atlz.sh scripts/estado-da-producao.sh
+bash scripts/prova-estado-da-producao.sh
+bash -n scripts/*.sh
 ```
 
-CI checks duplicate definitions; it does not exercise Ollama, GPU fit, Chat/Code
-quality or deployed settings. Record acceptance separately with date, model tag,
+CI checks duplicate definitions and the diagnostic's HTTP/JSON handling using
+loopback fixtures; it does not exercise Ollama, GPU fit, Chat/Code quality or
+deployed settings. Record acceptance separately with date, model tag,
 base, parameters, runtime/driver, application revision and measured outcomes.
 
 Follow [agent instructions](AGENTS.md) and [the changelog](CHANGELOG.md). Changes,
