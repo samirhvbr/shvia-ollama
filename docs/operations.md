@@ -1,7 +1,9 @@
 # Operating the ShvIA model definitions
 
-Reviewed October 15, 2026 against shvia-ollama `7e86446`, shvia-web `25704dbc`
-and shvia-code `b872d8c`. This is a source review, not live production acceptance.
+Repository scripts and definitions reviewed October 26, 2026 against
+shvia-ollama `ca27c31` (`1.3.2`). The cross-application contract below was reviewed
+on October 15 against shvia-web `25704dbc` and shvia-code `b872d8c`; it is not
+live production acceptance.
 
 ## Ownership and the application contract
 
@@ -53,6 +55,15 @@ specifically records that a text-only fit does not prove a vision fit.
 
 ## Observe without promoting
 
+The current diagnostic requires Bash, curl and standard text tools; it does not
+use the Ollama CLI or require `jq`. These controls belong to this script:
+
+| Input | Meaning |
+|---|---|
+| `OLLAMA_HOST` | Required server URL, including scheme and port; the script appends `/api/show` |
+| `MODELO` | Requested tag, default `ShvIA:latest`; independent of the build script's `ShvIA:v9` default |
+| `SHVIA_WEB_ENV` | Optional readable Web environment file, used only to inspect the preserve flag; no application request is made |
+
 For the model side only:
 
 ```bash
@@ -70,11 +81,21 @@ Interpretation limits matter:
 - The script reads a file, not Laravel's effective cached configuration or
   per-request overrides. An absent flag is interpreted using its coded default.
 - It uses text matching, not full response validation, and does not use curl's
-  HTTP-failure flag. Missing fields or an API error body can end with exit `0`.
+  HTTP-failure flag. HTTP 404/500, malformed JSON or missing fields can end with
+  exit `0`; a `num_ctx` string anywhere in the body can be mistaken for measured
+  configuration. Its 20-second curl limit bounds transport only, not validity.
 - A context size of at least `32768` means compatible capacity, not proof of v9
   identity; a smaller custom model is not necessarily v8.
 - It does not verify full sampling, weights/digest, selected Web target, persona
   content, GPU fit or inference behavior. Its exit code is not an acceptance gate.
+
+Current exit codes are `1` for missing `OLLAMA_HOST`, `2` for curl failure and
+otherwise normally `0`, including the unmeasured-response cases above. A missing
+or unreadable `SHVIA_WEB_ENV` leaves the application side unmeasured.
+[PR #3](https://github.com/samirhvbr/shvia-ollama/pull/3) proposes HTTP/JSON/field
+validation, nonzero diagnostic failures and a `jq` prerequisite. It remains open
+and unmerged as of October 26, 2026; those guarantees and that dependency are
+not part of this baseline.
 
 Record observations with a timestamp and explicit unknowns. The
 [September record](rollout-observation-20260923.md) is historical, not a live probe.
@@ -100,11 +121,12 @@ a tag until confirming no application or user still selects it.
 
 No scripts or Modelfiles were changed by this review. Suggested follow-ups:
 
-1. Make `estado-da-producao.sh` distinguish HTTP/API/parse failures with nonzero
-   exits and compare full identity instead of equating context size with v8/v9.
+1. Review the existing [diagnostic validation PR #3](https://github.com/samirhvbr/shvia-ollama/pull/3).
+   Its response validation and capacity wording do not establish full model
+   identity; digest/parameter and application acceptance remain separate.
 2. Pin or record the resolved base digest for reproducible model builds; the build
    script currently pulls a mutable base tag on every invocation.
-3. Resolve the existing placeholder in `tools/Dev.Modelfile` before using that
+3. Resolve the existing placeholder in `modelfiles/tools/Dev.Modelfile` before using that
    variant, and review the family-specific directives recorded in the catalogue.
 
 These are source findings, not confirmed failures in the currently deployed GPU.

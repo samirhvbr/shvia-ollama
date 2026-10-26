@@ -20,8 +20,8 @@ repository does not implement those applications or an inference server.
 
 ## Current repository state
 
-Reviewed on October 15, 2026 against source commit `7e86446` (repository version
-`1.3.1`). There are **24 tracked Modelfiles**: 2 in `active/`, 4 in `tools/`, 3 in
+Reviewed on October 26, 2026 against source commit `ca27c31` (repository version
+`1.3.2`). There are **24 tracked Modelfiles**: 2 in `active/`, 4 in `tools/`, 3 in
 `shana/`, and 15 in `archive/`. The repository version describes this collection;
 it is separate from model tags such as `ShvIA:v9` and the installed Ollama version.
 
@@ -44,12 +44,11 @@ sufficient model storage/memory. These commands download model data and create
 or replace the named tag on the server selected by `OLLAMA_HOST`:
 
 ```bash
-./scripts/build.sh
-# Equivalent: v9 input -> ShvIA:v9
-./scripts/build.sh modelfiles/active/ShvIA_v9.Modelfile ShvIA:v9
+./scripts/build.sh modelfiles/active/ShvIA_v9.Modelfile ShvIA:v9-candidate
 ```
 
-Use a distinct candidate tag if `ShvIA:v9` already serves traffic. The script
+Choose a candidate tag that is not already serving traffic. With no arguments,
+the script instead uses the same v9 input and writes `ShvIA:v9`. The script
 pulls the base and runs `ollama create`; its final VRAM lines are instructions
 for a human, not an automated GPU or acceptance test. See the operating guide
 before promotion.
@@ -79,8 +78,11 @@ bash scripts/prova-modelfile-nao-e-duplicata.sh
 bash -n scripts/build.sh scripts/atlz.sh scripts/estado-da-producao.sh
 ```
 
-CI checks duplicate definitions; it does not exercise Ollama, GPU fit, Chat/Code
-quality or deployed settings. Record acceptance separately with date, model tag,
+The ruler reads tracked `*.Modelfile` paths and compares their bytes against
+`modelfiles/duplicatas-declaradas.txt`. Untracked files are outside its coverage;
+a pass does not establish valid Modelfile syntax or semantic differences between
+models. CI runs all `scripts/prova-*.sh` (currently this ruler); it does not
+exercise Ollama, GPU fit, Chat/Code quality or deployed settings. Record acceptance separately with date, model tag,
 base, parameters, runtime/driver, application revision and measured outcomes.
 
 Follow [agent instructions](AGENTS.md) and [the changelog](CHANGELOG.md). Changes,
