@@ -1,5 +1,7 @@
 # Operating the ShvIA model definitions
 
+Status: `ACTIVE`.
+
 Reviewed October 15, 2026 against shvia-ollama `7e86446`, shvia-web `25704dbc`
 and shvia-code `b872d8c`. This is a source review, not live production acceptance.
 
@@ -60,17 +62,28 @@ OLLAMA_HOST=http://127.0.0.1:11434 MODELO=ShvIA:v9 \
   ./scripts/estado-da-producao.sh
 ```
 
-The script calls `/api/show`, extracts context, system-presence and parent model,
-and prints a compatibility hint. An authorized operator may additionally set
+The script requires Bash, curl and `jq`. It calls `/api/show`, requires a 2xx response
+and one JSON object without an API error, then validates the fields it reads. Context
+comes only from one positive integer `num_ctx` declaration in the API's `parameters`
+string. Template, system prompt and raw Modelfile text are not authoritative for
+this measurement. It reports system-presence and parent model when provided and
+prints a capacity compatibility hint. An authorized operator may additionally set
 `SHVIA_WEB_ENV` to a readable application environment file; it reads only the
 preserve flag. Do not copy credentials into this repository or diagnostic records.
+
+| Exit | Meaning |
+|---|---|
+| `0` | Model context was measured, including when it is below `32768`; read the printed capacity/app caveats. |
+| `1` | The required `OLLAMA_HOST` was not provided. |
+| `2` | A dependency, transport, HTTP, API, JSON or field-validation failure prevented measurement, including absent, malformed or ambiguous `num_ctx`. |
 
 Interpretation limits matter:
 
 - The script reads a file, not Laravel's effective cached configuration or
   per-request overrides. An absent flag is interpreted using its coded default.
-- It uses text matching, not full response validation, and does not use curl's
-  HTTP-failure flag. Missing fields or an API error body can end with exit `0`.
+- A model without explicit `num_ctx` in `parameters` is unmeasured, even when the
+  server could choose a default context for inference. The script does not infer
+  that default from model architecture metadata or prompt text.
 - A context size of at least `32768` means compatible capacity, not proof of v9
   identity; a smaller custom model is not necessarily v8.
 - It does not verify full sampling, weights/digest, selected Web target, persona
@@ -98,10 +111,11 @@ a tag until confirming no application or user still selects it.
 
 ## Code findings awaiting a decision
 
-No scripts or Modelfiles were changed by this review. Suggested follow-ups:
+The October 15 documentation review did not change scripts or Modelfiles. The
+diagnostic's HTTP/API/parse handling was corrected in 1.3.3 and checked with local
+HTTP fixtures. Remaining follow-ups:
 
-1. Make `estado-da-producao.sh` distinguish HTTP/API/parse failures with nonzero
-   exits and compare full identity instead of equating context size with v8/v9.
+1. Compare full model identity; a valid context capacity is not proof of v8/v9 identity.
 2. Pin or record the resolved base digest for reproducible model builds; the build
    script currently pulls a mutable base tag on every invocation.
 3. Resolve the existing placeholder in `tools/Dev.Modelfile` before using that

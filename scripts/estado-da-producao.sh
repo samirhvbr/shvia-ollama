@@ -36,17 +36,54 @@ if [[ -z "$HOST" ]]; then
 fi
 HOST="${HOST%/}"
 
+for dependency in curl jq; do
+  command -v "$dependency" >/dev/null 2>&1 || {
+    echo "estado-da-producao: falta $dependency — não foi possível medir." >&2
+    exit 2
+  }
+done
+
 echo "── GPU: $MODELO em $HOST"
-RESP="$(curl -sS -m 20 "$HOST/api/show" -d "{\"model\":\"$MODELO\"}" 2>&1)" || {
+REQUEST="$(jq -nc --arg model "$MODELO" '{model: $model}')" || exit 2
+RESP="$(curl -sS -m 20 -w '\n%{http_code}' -H 'Content-Type: application/json' \
+  "$HOST/api/show" -d "$REQUEST" 2>&1)" || {
   echo "   ✗ não consegui falar com a GPU. Rede? Porta? O serviço está de pé?" >&2
   exit 2
 }
 
-# `num_ctx` pode vir dos parameters do Modelfile OU do template; procura nos dois.
-NUM_CTX="$(printf '%s' "$RESP" | grep -oE '"?num_ctx"?[ :=]+[0-9]+' | grep -oE '[0-9]+$' | head -1)"
-TEM_SYSTEM="não"
-printf '%s' "$RESP" | grep -q '"system"[[:space:]]*:[[:space:]]*"..' && TEM_SYSTEM="sim"
-BASE="$(printf '%s' "$RESP" | grep -oE '"parent_model"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | cut -d'"' -f4)"
+# curl succeeding means transport succeeded, not that /api/show returned model data.
+HTTP_STATUS="${RESP##*$'\n'}"
+RESP="${RESP%$'\n'*}"
+case "$HTTP_STATUS" in
+  2[0-9][0-9]) ;;
+  *) echo "   ✗ /api/show respondeu HTTP $HTTP_STATUS — modelo não medido." >&2; exit 2 ;;
+esac
+
+# Read only the API's typed parameters, never context-looking text in prompts or error bodies.
+# Slurp also rejects multiple JSON documents instead of silently accepting the last one.
+DATA="$(printf '%s' "$RESP" | jq -sce '
+  if length != 1 then error("expected one JSON object") else .[0] end
+  | if type != "object" then error("expected an object") else . end
+  | if has("error") then error("API error response") else . end
+  | if (.parameters | type) != "string" then error("parameters must be a string") else . end
+  | if has("system") and (.system | type) != "string" then error("system must be a string") else . end
+  | if has("details") and (.details | type) != "object" then error("details must be an object") else . end
+  | (.details // {}) as $details
+  | if ($details | has("parent_model")) and ($details.parent_model | type) != "string"
+    then error("parent_model must be a string") else . end
+  | (.parameters | split("\n") | map(select(test("^[ \\t]*num_ctx([ \\t]|$)")))) as $context
+  | if ($context | length) != 1 then error("num_ctx missing or ambiguous") else . end
+  | ($context[0] | capture("^[ \\t]*num_ctx[ \\t]+(?<value>[1-9][0-9]*)[ \\t\\r]*$").value) as $num_ctx
+  | {num_ctx: $num_ctx, compatible: (($num_ctx | tonumber) >= 32768),
+     system: ((.system // "") | length > 0), parent_model: ($details.parent_model // "")}
+')" || {
+  echo "   ✗ resposta de /api/show inválida ou sem num_ctx configurado — modelo não medido." >&2
+  exit 2
+}
+NUM_CTX="$(printf '%s' "$DATA" | jq -r '.num_ctx')"
+TEM_SYSTEM="$(printf '%s' "$DATA" | jq -r 'if .system then "sim" else "não" end')"
+BASE="$(printf '%s' "$DATA" | jq -r '.parent_model')"
+COMPATIBLE="$(printf '%s' "$DATA" | jq -r '.compatible')"
 
 echo "   num_ctx ............ ${NUM_CTX:-não reportado}"
 echo "   SYSTEM no Modelfile  $TEM_SYSTEM"
@@ -69,12 +106,12 @@ echo "── App: OLLAMA_PRESERVE_MODELFILE_SYSTEM = $PRESERVE"
 
 # ── Veredito ────────────────────────────────────────────────────────────────
 echo
-if [[ "${NUM_CTX:-0}" -ge 32768 ]]; then
-  echo "✅ A GPU serve um modelo com num_ctx ${NUM_CTX} — compatível com o v9."
+if [[ "$COMPATIBLE" == true ]]; then
+  echo "✅ O modelo reporta num_ctx ${NUM_CTX} — capacidade compatível com o v9."
   if [[ $MEDIU_APP -eq 0 ]]; then
     echo "   ⚠️ O lado do APP não foi medido, então isto ainda não é um veredito completo:"
-    echo "      um rollout pela metade (GPU no v9, app em preserve=true) é o pior estado,"
-    echo "      porque cada metade parece certa sozinha. Rode de novo com SHVIA_WEB_ENV."
+    echo "      contexto amplo não confirma o modelo nem o comportamento do app."
+    echo "      Rode de novo com SHVIA_WEB_ENV para medir também o preserve."
   else
     case "$PRESERVE" in
       false*) echo "   E o app está na Fase 1 (preserve=false). **Registre a data no README.**" ;;
@@ -83,13 +120,11 @@ if [[ "${NUM_CTX:-0}" -ge 32768 ]]; then
               echo "      parece certa sozinha." ;;
     esac
   fi
-elif [[ -n "${NUM_CTX:-}" ]]; then
-  echo "🔴 A GPU serve num_ctx ${NUM_CTX} — é o **v8**, com o bug conhecido do modo Code:"
-  echo "   requisição real usa 15-31k tokens, o servidor trunca em silêncio e o modelo"
-  echo "   'esquece' o começo sem ninguém ser avisado."
-  echo "   O rollout NÃO aconteceu. Ver docs/ARQUITETURA-CAMADAS.md §6."
 else
-  echo "⚠️ A GPU não reportou num_ctx. Confira à mão: ollama show $MODELO"
+  echo "🔴 O modelo reporta num_ctx ${NUM_CTX} — abaixo dos 32768 esperados para o v9:"
+  echo "   requisições de 15-31k tokens podem exceder esse contexto. Confira como o"
+  echo "   app trata o limite: truncamento ou recusa dependem das opções da requisição."
+  echo "   O contexto sozinho não identifica a versão. Ver docs/ARQUITETURA-CAMADAS.md §6."
 fi
 echo
 echo "Seja qual for a resposta, ela precisa VIRAR REGISTRO no README deste repo e no"
