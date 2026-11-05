@@ -1,5 +1,19 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.4 - Re-verify the README and operating guide against current Web and anna sources
+
+Checked against shvia-web `b24e45a5` and shvia-code `7b5dd3f`. The guide's
+application-contract table gains the persona source (`OLLAMA_SYSTEM_PROMPT`,
+`OLLAMA_SYSTEM_PROMPT_FILE`), the output budget actually sent (`OLLAMA_NUM_PREDICT`,
+default 8192, with no per-mode Chat/Code budget) and when `think` is sent
+(`OLLAMA_THINK`, `OLLAMA_THINKING_MODELS`). The preserve flag's per-request override
+is noted as unused by any caller, and anna's history compaction is described as
+count- and token-based.
+
+The README's repository map adds the duplicate allowlist, the release tooling, the
+git hooks and the vendored `.claude/` skill, and says how to enable the hooks in a
+fresh clone. No GPU, model or application setting was touched.
+
 ## 1.3.4 - Correct catalogue base tags and record the SHVIA-WEB mirror drift
 
 The archive rows for ShvIA v5, v6 and v7 named `gemma4:26b`; their `FROM` is

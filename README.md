@@ -20,8 +20,8 @@ repository does not implement those applications or an inference server.
 
 ## Current repository state
 
-Reviewed on October 15, 2026 against source commit `7e86446` (repository version
-`1.3.1`). There are **24 tracked Modelfiles**: 2 in `active/`, 4 in `tools/`, 3 in
+Reviewed on November 5, 2026 against source commit `e1eb95a` (repository version
+`1.3.3`). There are **24 tracked Modelfiles**: 2 in `active/`, 4 in `tools/`, 3 in
 `shana/`, and 15 in `archive/`. The repository version describes this collection;
 it is separate from model tags such as `ShvIA:v9` and the installed Ollama version.
 
@@ -36,6 +36,11 @@ The last production measurement committed here is from **September 23, 2026**:
 `ShvIA:latest` matched v9, while the application still preserved the Modelfile
 system prompt. This review did not access a GPU host, change application settings,
 create a model, run inference or revalidate that observation.
+
+SHVIA-WEB keeps its own, older copy of 16 of these definitions under
+`docs/SERVIDOR-GPU/MODELFILES/` (a July 11, 2026 snapshot). It is not synchronized
+with this repository and has no v9; see the
+[catalogue](modelfiles/README.md#mirror-in-shvia-web) for where the two differ.
 
 ## Build a separate candidate
 
@@ -68,7 +73,11 @@ before promotion.
 | `scripts/estado-da-producao.sh` | limited read-only model/application observation |
 | `scripts/prova-modelfile-nao-e-duplicata.sh` | check tracked definitions against the declared duplicate list |
 | `scripts/prova-estado-da-producao.sh` | exercise diagnostic responses through a local HTTP server |
+| `modelfiles/duplicatas-declaradas.txt` | the byte-identical Modelfile pairs the duplicate ruler accepts, each with its reason |
 | `.github/workflows/ci.yml` | run `scripts/prova-*.sh` on PRs and master pushes |
+| `.github/workflows/release.yml`, `tools/release.sh` | tag and publish a GitHub Release for `version.md`; neither builds nor deploys a model |
+| `tools/git-hooks/` | `commit-msg` and `pre-push` hooks generated from repodocs (subject shape, version bump) |
+| `.claude/` | vendored `loop-work` agent skill and its prompt templates; a snapshot of another repository, not model tooling |
 
 ## Validation and contributions
 
@@ -89,7 +98,9 @@ base, parameters, runtime/driver, application revision and measured outcomes.
 
 Follow [agent instructions](AGENTS.md) and [the changelog](CHANGELOG.md). Changes,
 including documentation, bump `version.md` in the same commit and use
-`X.Y.Z - description in English (US)`. A PR is reviewed before landing; a repository
+`X.Y.Z - description in English (US)`. In a fresh clone, enable the hooks that
+check this with `git config core.hooksPath tools/git-hooks`; the escape hatch is
+`REPODOCS_NO_HOOK=1`. A PR is reviewed before landing; a repository
 release does not create or deploy an Ollama model.
 
 For model-definition changes, record base/parameter choices and A/B outcomes in
