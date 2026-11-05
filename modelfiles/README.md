@@ -1,7 +1,7 @@
 # Catálogo de Modelfiles
 
 Inventário completo, com status e o motivo de cada arquivo existir.
-Original lineage audit: July 29, 2026. Inventory checked October 15, 2026:
+Original lineage audit: July 29, 2026. Inventory checked November 5, 2026:
 24 definitions. The historical defect analysis below is retained; deployment
 status comes from dated measurements, not directory names. See the
 [operating guide](../docs/operations.md).
@@ -37,15 +37,15 @@ status comes from dated measurements, not directory names. See the
 |---|---|---|
 | `Shana-v2.0.Modelfile` | qwen3:14b | Persona pessoal sarcástica, bem estruturada, com few-shots. **Defeitos:** falta `/no_think` (qwen3 gasta o `num_predict 512` em raciocínio) e os stops `<\|end_of_text\|>`/`<\|eot_id\|>` são tokens de llama (mortos aqui). |
 | `Shana-v2.1.Modelfile` | gemma4:12b | Idêntico ao v2.0 exceto o FROM — teste A/B de base. Stops de llama/ChatML mortos na família gemma (`<end_of_turn>` seria o real). A/B **resolvido no v2.2**: vence gemma4 (o qwen3:14b não tem visão). Superado. |
-| `Shana-v2.2.Modelfile` | **gemma4:12b-it-qat** | temp 1.0/64/0.95 · `repeat_penalty` 1.0 · num_ctx **32768** · `num_predict` -1 | **Atual.** Persona com **visão** (interpreta prints). Base trocada do `26b-a4b-it-qat`, que **não cabe na V100 16GB com visão**: 14 GB de pesos + 1,2 GB de projector = 16 GB numa placa de 16 GB (a medição de 15,2 GB do v9 é só-texto — o projector só carrega quando chega imagem). Stops mortos removidos, calibração Gemma 4 oficial aplicada. ⚠ Ao contrário do ShvIA, o SYSTEM **é** o produto: cliente que enviar `role:system` apaga a persona. |
+| `Shana-v2.2.Modelfile` | **gemma4:12b-it-qat** | temp 1.0/64/0.95 · `repeat_penalty` 1.0 · num_ctx **32768** · `num_predict` -1 | **Atual.** Persona com **visão** (interpreta prints). The `26b-a4b-it-qat` base was ruled out because it **does not fit a 16 GB V100 with vision** (the tracked predecessors, v2.1 and the first v2.2 commit `8c3b8bc`, used `gemma4:12b`): 14 GB de pesos + 1,2 GB de projector = 16 GB numa placa de 16 GB (a medição de 15,2 GB do v9 é só-texto — o projector só carrega quando chega imagem). Stops mortos removidos, calibração Gemma 4 oficial aplicada. ⚠ Ao contrário do ShvIA, o SYSTEM **é** o produto: cliente que enviar `role:system` apaga a persona. |
 
 ## archive/ (não usar — motivo do arquivamento)
 
 | Arquivo | Base | Por que foi arquivado |
 |---|---|---|
-| `ShvIA_v7.Modelfile` | gemma4:26b | O melhor SYSTEM da linhagem Anna (seções organizadas) e num_ctx 16384. Superado pelo v8 (que, ironicamente, **regrediu** o num_ctx para 4096). Referência para a persona destilada em `personas/anna-blue3.md`. |
-| `ShvIA_v6.Modelfile` | gemma4:26b | Primeira persona completa. Colagens sem integração ("O objetivo não é responder…" no meio do bloco de confiança), typos, bullet órfão. Reescrito no v7. |
-| `ShvIA_v5.Modelfile` | gemma4:26b | Troca de base qwen3→gemma4 (removeu `/no_think` corretamente; comentário justificando temp 1.0 do QAT). SYSTEM ainda esqueleto com seções vazias. |
+| `ShvIA_v7.Modelfile` | gemma4:26b-a4b-it-qat | O melhor SYSTEM da linhagem Anna (seções organizadas) e num_ctx 16384. Superado pelo v8 (que, ironicamente, **regrediu** o num_ctx para 4096). Referência para a persona destilada em `personas/anna-blue3.md`. |
+| `ShvIA_v6.Modelfile` | gemma4:26b-a4b-it-qat | Primeira persona completa. Colagens sem integração ("O objetivo não é responder…" no meio do bloco de confiança), typos, bullet órfão. Reescrito no v7. |
+| `ShvIA_v5.Modelfile` | gemma4:26b-a4b-it-qat | Troca de base qwen3→gemma4 (removeu `/no_think` corretamente; comentário justificando temp 1.0 do QAT). SYSTEM ainda esqueleto com seções vazias. |
 | `ShvIA_v4.Modelfile` | qwen3:14b | Diff de 1 linha sobre o v3 (renomeia persona para "Anna"). Seções `Como responder:` e `Segurança:` vazias. |
 | `ShvIA_v3.Modelfile` | qwen3:14b | Primeiro da linhagem ativa. SYSTEM incompleto (seções vazias), `/no_think` embutido, vocabulário de assistente Linux numa persona de ISP. |
 | `ShvIA_q3.Modelfile` | qwen3:14b | O "elo perdido": momento em que a persona Blue3 foi colada por cima do assistente técnico, apagando as seções técnicas — o padrão que culmina no bug do v8. |
@@ -68,3 +68,26 @@ status comes from dated measurements, not directory names. See the
 5. **Versão nova por diff de 1 linha** — v3→v4 gastou uma versão num rename. Usar o CHANGELOG para mudanças pequenas.
    🔴 **E por diff de ZERO linhas, medido em 22/09/2026:** `Shana-v2.3.Modelfile` era cópia byte-a-byte da v2.2. Tinha **um** commit em toda a história (`1ebc20e "Nova versao"`) e já nasceu idêntica — nada próprio foi sobrescrito. Quem promovesse "a v2.3" subiria a v2.2 acreditando estar subindo mudança. Apagada; agora `scripts/prova-modelfile-nao-e-duplicata.sh` recusa duplicata que não esteja declarada em `modelfiles/duplicatas-declaradas.txt`.
 6. **Regressão silenciosa de parâmetro** — v7 (16384) → v8 (4096) sem registro: foi a causa-raiz do bug do modo Code.
+   The SHVIA-WEB mirror's v8 copy declares 16384 instead; see [below](#mirror-in-shvia-web).
+
+## Mirror in SHVIA-WEB
+
+SHVIA-WEB keeps a separate copy of 16 definitions under
+`docs/SERVIDOR-GPU/MODELFILES/` (`active/` and `historico/`), which its own README
+dates to a July 11, 2026 snapshot of the GPU server. It is not synchronized with this
+repository. Compared byte for byte on November 5, 2026 (SHVIA-WEB `b24e45a5`):
+
+| SHVIA-WEB file | Here | Result |
+|---|---|---|
+| `active/ShvIA_v3` … `active/ShvIA_v7` | `archive/ShvIA_v3` … `archive/ShvIA_v7` | identical |
+| `active/ShvIA_v8` | `active/ShvIA_v8` | **differs in one line**: `num_ctx 16384` there, `num_ctx 4096` here |
+| `historico/Anna-v1.0` … `Anna-v2.4`, `bk.Anna`, `Shana-v1.0` | `archive/` | identical |
+| `historico/Dev` | `tools/Dev` | identical |
+| `historico/Shana-v2.0` | `shana/Shana-v2.0` | identical |
+
+Absent there: `ShvIA_v9`, `Shana-v2.1`, `Shana-v2.2`, `ShvIA_q3`, `ShvIA_qwen`,
+`SShvTerm`, `ShvIA_qwen_2` and `ShvIA_gpt`. The mirror's README still names
+`ShvIA:G4v8` as the production model, and SHVIA-WEB's GPU rebuild runbook recreates
+`ShvIA` from its own v8 copy. Neither repository records which `num_ctx` the server's
+v8 tag carried on July 11; the July 29 diagnosis describes the deployed v8 as `num_ctx 4096`.
+Use this directory, not the mirror, as the source for builds.

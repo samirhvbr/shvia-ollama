@@ -1,5 +1,18 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.4 - Correct catalogue base tags and record the SHVIA-WEB mirror drift
+
+The archive rows for ShvIA v5, v6 and v7 named `gemma4:26b`; their `FROM` is
+`gemma4:26b-a4b-it-qat`. The Shana v2.2 row said the base was switched from
+`26b-a4b-it-qat`, but the tracked predecessors (v2.1 and the first v2.2 commit,
+`8c3b8bc`) used `gemma4:12b`; the row now says the 26b base was ruled out for vision.
+
+A new catalogue section compares, byte for byte, the 16 definitions SHVIA-WEB keeps
+under `docs/SERVIDOR-GPU/MODELFILES/` (SHVIA-WEB `b24e45a5`): 15 are identical,
+`ShvIA_v8` differs in `num_ctx` (16384 there, 4096 here), and eight definitions,
+v9 among them, are absent there. Documentation only: no Modelfile, script, model or
+server changed.
+
 ## 1.3.3 - Reject unmeasured Ollama diagnostic responses
 
 The production-state diagnostic treated a successful curl transfer as a successful
