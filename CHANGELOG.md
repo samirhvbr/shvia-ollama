@@ -1,5 +1,12 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.4 - Point the historical architecture page at what has since shipped
+
+`docs/ARQUITETURA-CAMADAS.md` keeps its text. Its top notice gains dated reading
+notes: where the September numbers now live, which of its two amendments about the
+SSE error `status` is current, which Phase 1 items exist in SHVIA-WEB `b24e45a5`
+and which were not found, and that the `configs/` item of §8 was closed in 1.0.2.
+
 ## 1.3.4 - Re-verify the README and operating guide against current Web and anna sources
 
 Checked against shvia-web `b24e45a5` and shvia-code `7b5dd3f`. The guide's
