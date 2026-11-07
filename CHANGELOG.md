@@ -1,5 +1,39 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.4 - Point the historical architecture page at what has since shipped
+
+`docs/ARQUITETURA-CAMADAS.md` keeps its text. Its top notice gains dated reading
+notes: where the September numbers now live, which of its two amendments about the
+SSE error `status` is current, which Phase 1 items exist in SHVIA-WEB `b24e45a5`
+and which were not found, and that the `configs/` item of §8 was closed in 1.0.2.
+
+## 1.3.4 - Re-verify the README and operating guide against current Web and anna sources
+
+Checked against shvia-web `b24e45a5` and shvia-code `7b5dd3f`. The guide's
+application-contract table gains the persona source (`OLLAMA_SYSTEM_PROMPT`,
+`OLLAMA_SYSTEM_PROMPT_FILE`), the output budget actually sent (`OLLAMA_NUM_PREDICT`,
+default 8192, with no per-mode Chat/Code budget) and when `think` is sent
+(`OLLAMA_THINK`, `OLLAMA_THINKING_MODELS`). The preserve flag's per-request override
+is noted as unused by any caller, and anna's history compaction is described as
+count- and token-based.
+
+The README's repository map adds the duplicate allowlist, the release tooling, the
+git hooks and the vendored `.claude/` skill, and says how to enable the hooks in a
+fresh clone. No GPU, model or application setting was touched.
+
+## 1.3.4 - Correct catalogue base tags and record the SHVIA-WEB mirror drift
+
+The archive rows for ShvIA v5, v6 and v7 named `gemma4:26b`; their `FROM` is
+`gemma4:26b-a4b-it-qat`. The Shana v2.2 row said the base was switched from
+`26b-a4b-it-qat`, but the tracked predecessors (v2.1 and the first v2.2 commit,
+`8c3b8bc`) used `gemma4:12b`; the row now says the 26b base was ruled out for vision.
+
+A new catalogue section compares, byte for byte, the 16 definitions SHVIA-WEB keeps
+under `docs/SERVIDOR-GPU/MODELFILES/` (SHVIA-WEB `b24e45a5`): 15 are identical,
+`ShvIA_v8` differs in `num_ctx` (16384 there, 4096 here), and eight definitions,
+v9 among them, are absent there. Documentation only: no Modelfile, script, model or
+server changed.
+
 ## 1.3.3 - Reject unmeasured Ollama diagnostic responses
 
 The production-state diagnostic treated a successful curl transfer as a successful

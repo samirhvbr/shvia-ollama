@@ -2,8 +2,9 @@
 
 Status: `ACTIVE`.
 
-Reviewed October 15, 2026 against shvia-ollama `7e86446`, shvia-web `25704dbc`
-and shvia-code `b872d8c`. This is a source review, not live production acceptance.
+Reviewed November 5, 2026 against shvia-ollama `e1eb95a`, shvia-web `b24e45a5`
+and shvia-code `7b5dd3f` (first written October 15 against `7e86446`, `25704dbc`
+and `b872d8c`). This is a source review, not live production acceptance.
 
 ## Ownership and the application contract
 
@@ -18,16 +19,20 @@ In the reviewed Web source (`config/ollama.php` and
 
 | Setting or path | Current implementation |
 |---|---|
-| `OLLAMA_PRESERVE_MODELFILE_SYSTEM` | Defaults to `true`; callers can override per request. Enabled folds application system messages into the first user turn. Disabled merges opening system messages. |
+| `OLLAMA_SYSTEM_PROMPT`, `OLLAMA_SYSTEM_PROMPT_FILE` | The application's persona text: the inline value wins; otherwise the file's contents. A missing or unreadable file yields an empty prompt rather than an error. Under v9 an empty value means the neutral fallback answers Chat without the Anna persona. |
+| `OLLAMA_PRESERVE_MODELFILE_SYSTEM` | Defaults to `true`. The driver accepts a per-request override, but no caller in `app/` sets one. Enabled folds application system messages into the first user turn. Disabled merges the opening system messages into one. |
 | `OLLAMA_KEEP_ALIVE` | Defaults to empty: omit the request field and let the server decide. A configured numeric value is sent as a JSON number, not a duration string. |
 | `OLLAMA_TRUNCATE_STRICT` | Defaults to `true`; sends top-level `truncate:false`. Context overflow is visible rather than silently truncated. |
+| `OLLAMA_NUM_PREDICT`, `OLLAMA_NUM_PREDICT_MAX` | Every request sends `options.num_predict`: `8192` by default, or a caller's `max_tokens` clamped to `16384`; `0` sends nothing and leaves the Modelfile's `num_predict -1`. No Chat or Code caller passes a per-mode budget. |
+| `OLLAMA_THINK`, `OLLAMA_THINKING_MODELS` | `think` is sent only when `OLLAMA_THINK` is set, or when the effort selector is used on a model listed in `OLLAMA_THINKING_MODELS` (empty by default; an entry without `:tag`, such as `ShvIA`, matches every tag). Otherwise the model's own default applies. |
 | Code loop nudge | A user turn, rather than a trailing system message. |
 | `/code/chat` errors | Emit `message`, with `codigo` and integer `status` when available. |
-| anna history | Client-side message-count compaction exists; this is not proof that every token-sized prompt fits a model's context. |
+| anna history | Client-side compaction by message count, and by estimated tokens when the gateway reports the target's context window (old tool outputs are pruned first). This is not proof that every prompt fits a model's context. |
 
 These pieces already exist, although the older architecture page describes some
-as work to build. Its per-mode output budgets and retry-after-overflow sequence
-remain design material unless verified in the owning implementation. Do not move
+as work to build. Its per-mode output budgets (Chat 2048 / Code 4096, also quoted
+in the v9 Modelfile comments) and its retry-after-overflow sequence were not found
+in the reviewed Web source; treat them as design material. Do not move
 retrieved text into system authority simply to match a sample payload.
 
 Model selection also depends on request/user preferences, model roles, configured
@@ -89,8 +94,11 @@ Interpretation limits matter:
 - It does not verify full sampling, weights/digest, selected Web target, persona
   content, GPU fit or inference behavior. Its exit code is not an acceptance gate.
 
-Record observations with a timestamp and explicit unknowns. The
-[September record](rollout-observation-20260923.md) is historical, not a live probe.
+Record observations with a timestamp and explicit unknowns. The script's closing
+lines still ask for the record to go into this repository's README; dated
+observations now live in their own page under `docs/`, like the
+[September record](rollout-observation-20260923.md), which is historical, not a
+live probe.
 
 ## Promotion and rollback
 
@@ -111,9 +119,9 @@ a tag until confirming no application or user still selects it.
 
 ## Code findings awaiting a decision
 
-The October 15 documentation review did not change scripts or Modelfiles. The
-diagnostic's HTTP/API/parse handling was corrected in 1.3.3 and checked with local
-HTTP fixtures. Remaining follow-ups:
+Neither the October 15 nor the November 5 documentation review changed scripts or
+Modelfiles. The diagnostic's HTTP/API/parse handling was corrected in 1.3.3 and
+checked with local HTTP fixtures. Remaining follow-ups:
 
 1. Compare full model identity; a valid context capacity is not proof of v8/v9 identity.
 2. Pin or record the resolved base digest for reproducible model builds; the build

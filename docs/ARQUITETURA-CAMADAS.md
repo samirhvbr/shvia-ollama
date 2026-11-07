@@ -1,10 +1,28 @@
 # Arquitetura em camadas — motor (Modelfile) · persona (app) · fatos (RAG)
 
 > **Historical design/diagnosis.** This page preserves the original analysis and
-> dated amendments. It contains old paths, rollout states and proposed behavior.
-> The [operating guide](operations.md) describes the source reviewed on October 15,
-> 2026; the [dated production observation](rollout-observation-20260923.md) is not
-> a fresh production check.
+> dated amendments. It contains old paths, line numbers, rollout states and proposed
+> behavior. The [operating guide](operations.md) describes the source reviewed on
+> November 5, 2026; the [dated production observation](rollout-observation-20260923.md)
+> is not a fresh production check.
+>
+> Reading notes, checked against SHVIA-WEB `b24e45a5` on November 5, 2026:
+>
+> - The §6 amendment's "see the README for the numbers" now means the
+>   [rollout observation](rollout-observation-20260923.md); the README no longer
+>   carries them.
+> - The §3 table's amendment (status and code shipped in SHVIA-WEB #306, merged
+>   September 23) supersedes the §6 amendment's statement that the SSE `error` event
+>   carries no `status`. Both the Chat and Code error events now carry `codigo` and
+>   `status`.
+> - Of the §6 Phase 1 list, the source has: the loop nudge as a user turn,
+>   `keep_alive` omitted by default, the opening-system merge when the fold is off,
+>   `OLLAMA_SYSTEM_PROMPT_FILE`, and the error status. Not found: per-mode
+>   `num_predict` (every request sends `OLLAMA_NUM_PREDICT`, default 8192) and the
+>   compact-and-retry-once after an overflow 400. Whether production runs with the
+>   fold off has not been recorded since September 23.
+> - §8's last item is closed: 1.0.2 (`cd1bf6c`) removed the `configs/` dumps and
+>   ignores the folder.
 
 **Status:** especificado em 2026-07-29, junto com o diagnóstico do bug do modo
 Code ([DIAGNOSTICO-BUG-ANNA-CODE.md](DIAGNOSTICO-BUG-ANNA-CODE.md)). A v9 só
