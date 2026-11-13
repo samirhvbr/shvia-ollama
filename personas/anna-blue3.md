@@ -2,13 +2,17 @@
 
 Destilada do SYSTEM do `ShvIA_v8.Modelfile` (~900 tokens → ~450) na auditoria de 2026-07-29.
 
-- **Parte A** — prompt de persona: o SHVIA-WEB injeta este texto, verbatim, como
-  PRIMEIRA mensagem `role:system` de toda conversa do **modo Chat**
-  (via `OLLAMA_SYSTEM_PROMPT` → `ChatService::buildHistory`). Sendo a primeira
-  mensagem, ela substitui por completo o SYSTEM do Modelfile v9.
+- **Parte A** — persona prompt: SHVIA-WEB puts this text, verbatim, first in the
+  system message of every **Chat mode** conversation (via `OLLAMA_SYSTEM_PROMPT` →
+  `ChatService::buildHistory`), followed by whatever bot, user and project
+  instructions exist. With `OLLAMA_PRESERVE_MODELFILE_SYSTEM=false` (the v9 rollout)
+  that message goes out as the first `role:system` and replaces the v9 Modelfile's
+  SYSTEM completely. With the default (`true`) the Ollama driver folds it into the
+  first user turn instead, and the Modelfile's SYSTEM stays in force beside it.
 - **Parte B** — fatos institucionais da Blue3: documento para indexar no RAG
-  (blue3-kb / KnowledgeRetriever do SHVIA-WEB). O app recupera os chunks
-  relevantes e os anexa ao FIM da mensagem system, no bloco demarcado.
+  (blue3-kb / KnowledgeRetriever do SHVIA-WEB). The app retrieves the relevant
+  chunks and puts them in the user turn, in a block marked as retrieved content,
+  ahead of the user's text — never in the system message.
 - O modo **Code** NÃO usa este arquivo: o protocolo do agente vive no `anna`
   ([SHVIA-CODE/src/project.rs:30-69](../../SHVIA-CODE/src/project.rs)) — e está bom.
 - A seção "SERVIDOR TERMINAL" do v8 foi **removida de propósito**: modo agêntico
