@@ -28,12 +28,13 @@ In the reviewed Web source (`config/ollama.php` and
 | `OLLAMA_THINK`, `OLLAMA_THINKING_MODELS` | `think` is sent only when `OLLAMA_THINK` is set, or when the request carries an effort and the model is listed in `OLLAMA_THINKING_MODELS` (empty by default; an entry without `:tag`, such as `ShvIA`, matches every tag). On a listed model `low` sends `think:false` and any other effort sends `think:true`, overriding `OLLAMA_THINK`; on any other model the effort is ignored. The effort comes from the effort selector, a conversation's saved effort, a bot or project pin, or `AI_DEFAULT_EFFORT` when none of those is set; six of the seven machine callers named for the preserve flag pass `low`, and the compare judge passes the evaluator's own effort. Otherwise the model's own default applies. |
 | Code loop nudge | A user turn, rather than a trailing system message. |
 | `/code/chat` errors | Emit `message`, with `codigo` and integer `status` when available. |
-| anna history | Client-side compaction by message count, and by estimated tokens when the gateway reports the target's context window (old tool outputs are pruned first). This is not proof that every prompt fits a model's context. |
+| anna history | Client-side compaction by message count, and by estimated tokens when the gateway reports the target's context window (old tool outputs are pruned first). When the provider still refuses a request, which the gateway reports as `provedor_recusou_pedido` (for example Ollama's 400 for a prompt over `num_ctx` with `truncate:false`), anna cuts the history to about half of what it just sent and sends the request once more in the same round, with a warning; any other cause fails the same way again and is reported as before (SHVIA-CODE 0.15.0 onward, present in `7b5dd3f`). This is not proof that every prompt fits a model's context. |
 
 These pieces already exist, although the older architecture page describes some
-as work to build. Its per-mode output budgets (Chat 2048 / Code 4096) and its
-retry-after-overflow sequence were not found in the reviewed Web source; treat them
-as design material. Do not move retrieved text into system authority simply to
+as work to build. Its per-mode output budgets (Chat 2048 / Code 4096) and the
+server-side retry-after-overflow sequence it describes were not found in the reviewed
+Web source; treat them as design material. The retry that does exist is the client's,
+in the anna row above. Do not move retrieved text into system authority simply to
 match a sample payload.
 
 Model selection also depends on request/user preferences, model roles, configured

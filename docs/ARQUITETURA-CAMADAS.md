@@ -6,7 +6,8 @@
 > November 5, 2026; the [dated production observation](rollout-observation-20260923.md)
 > is not a fresh production check.
 >
-> Reading notes, checked against SHVIA-WEB `b24e45a5` on November 5, 2026:
+> Reading notes, checked against SHVIA-WEB `b24e45a5` and SHVIA-CODE `7b5dd3f` on
+> November 5, 2026:
 >
 > - The §6 amendment's "see the README for the numbers" now means the
 >   [rollout observation](rollout-observation-20260923.md); the README no longer
@@ -17,10 +18,16 @@
 >   `status`.
 > - Of the §6 Phase 1 list, the source has: the loop nudge as a user turn,
 >   `keep_alive` omitted by default, the opening-system merge when the fold is off,
->   `OLLAMA_SYSTEM_PROMPT_FILE`, and the error status. Not found: per-mode
->   `num_predict` (every request sends `OLLAMA_NUM_PREDICT`, default 8192) and the
->   compact-and-retry-once after an overflow 400. Whether production runs with the
->   fold off has not been recorded since September 23.
+>   `OLLAMA_SYSTEM_PROMPT_FILE`, and the error status. Not found in the SHVIA-WEB
+>   source: per-mode `num_predict` (every request sends `OLLAMA_NUM_PREDICT`,
+>   default 8192) and a compact-and-retry-once after an overflow 400 on the server
+>   side (`CodeChatController`, `ChatService`, `OllamaDriver`). The client has that
+>   retry: since 0.15.0 (November 2) `anna` cuts its history to about half of what it
+>   just sent and sends again once when the gateway reports
+>   `provedor_recusou_pedido`. So the §3 table's "retry-with-compaction is still
+>   open" and the §6 amendment's "nothing in `ChatService` or `OllamaDriver` retries
+>   or compacts" hold for the server only, not for the stack as a whole. Whether
+>   production runs with the fold off has not been recorded since September 23.
 > - §8's last item is closed: 1.0.2 (`cd1bf6c`) removed the `configs/` dumps and
 >   ignores the folder.
 

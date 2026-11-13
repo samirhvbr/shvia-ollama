@@ -1,5 +1,17 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.5 - Limit the not-found note on retry after overflow to the Web server and record anna's retry
+
+The 1.3.4 notes said the compact-and-retry-once after an overflow 400 was not found,
+which reads as if nothing retries. In the stack the guide cites, `anna` does: since
+SHVIA-CODE 0.15.0 (`7b5dd3f` has it), a request the provider refuses, as the gateway
+classifies it (`provedor_recusou_pedido`), is sent once more with the history cut to
+about half of what was just sent. What is still missing is the server-side retry the
+architecture page proposed (`CodeChatController`, `ChatService`, `OllamaDriver`). The
+page's reading note and the operating guide now say which side lacks it, the guide's
+anna row records the retry, and the note names the two dated amendments ("still open" in
+§3, "nothing … retries or compacts" in §6) that hold for the server only.
+
 ## 1.3.5 - Correct what the guide and the v9 Modelfile comment say the Web app sends per request
 
 The 1.3.4 guide said no caller in `app/` sets the per-request override of the preserve
