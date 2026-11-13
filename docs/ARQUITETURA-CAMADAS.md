@@ -28,6 +28,13 @@
 >   open" and the §6 amendment's "nothing in `ChatService` or `OllamaDriver` retries
 >   or compacts" hold for the server only, not for the stack as a whole. Whether
 >   production runs with the fold off has not been recorded since September 23.
+> - §1's layer 2 ("injected by the app as `messages[0]`, `role:system`") and layer 3
+>   (retrieved text "always appended to the END of the single system message") are the
+>   design. The app sends that system message only with
+>   `OLLAMA_PRESERVE_MODELFILE_SYSTEM=false`; with the default (`true`) the driver
+>   folds the system text into the first user turn and the Modelfile's SYSTEM stays in
+>   force. The retrieved chunks go in the user turn in both cases, never in the system
+>   message (`ChatService::buildHistory`).
 > - §8's last item is closed: 1.0.2 (`cd1bf6c`) removed the `configs/` dumps and
 >   ignores the folder.
 

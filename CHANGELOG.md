@@ -1,5 +1,18 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.5 - Qualify what the v9 Modelfile, the persona file and the architecture notes say the app sends as system and as RAG
+
+With the default `OLLAMA_PRESERVE_MODELFILE_SYSTEM=true` the Web app does not send a
+`role:system` message to Ollama: the driver folds the system text into the first user
+turn, so the Modelfile's own `SYSTEM` stays in force (`OllamaDriver::foldSystemIntoFirstUser`).
+Only with `false` is the merged system message sent first and the Modelfile's `SYSTEM`
+replaced. Retrieved chunks go in the user turn in both cases (`ChatService::buildHistory`).
+The v9 Modelfile header and its `SYSTEM` comment, `personas/anna-blue3.md` (which put the
+chunks at the end of the system message) and a new reading note on the architecture page
+now say that, and the sampling comment says what the driver sends: `temperature`, only
+when the caller sets one, and no other sampling option. Only comment lines of the
+Modelfile changed.
+
 ## 1.3.5 - Limit the not-found note on retry after overflow to the Web server and record anna's retry
 
 The 1.3.4 notes said the compact-and-retry-once after an overflow 400 was not found,

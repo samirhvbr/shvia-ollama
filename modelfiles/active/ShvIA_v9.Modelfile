@@ -3,10 +3,13 @@
 # ----------------------------------------------------------------------------
 # Arquitetura em camadas (ver ../../docs/ARQUITETURA-CAMADAS.md):
 #   1. Este Modelfile  = motor neutro (base, sampling, contexto, fallback SYSTEM)
-#   2. App (SHVIA-WEB) = envia role:system como PRIMEIRA mensagem por modo:
+#   2. App (SHVIA-WEB) = sends, per mode, the text below as the FIRST role:system message
+#                        when OLLAMA_PRESERVE_MODELFILE_SYSTEM=false (the v9 rollout); with
+#                        the default (true) the driver folds it into the first user turn
+#                        and the SYSTEM below stays in force:
 #                        Chat -> persona Anna (../../personas/anna-blue3.md)
 #                        Code -> protocolo do agente (SHVIA-CODE/src/project.rs)
-#   3. RAG             = fatos da Blue3 / dados de cliente, injetados como contexto
+#   3. RAG             = Blue3 facts / client data, put in the user turn as retrieved context
 #
 # Comportamento do Ollama que esta arquitetura explora (server/routes.go):
 #   - Se messages[0] da requisição for role:system, o SYSTEM abaixo NÃO é usado
@@ -26,8 +29,10 @@ FROM gemma4:26b-a4b-it-qat
 
 # ----------------------------------------------------------------------------
 # SYSTEM — fallback neutro e curto (~250 tokens). Sem NADA de Blue3/Anna.
-# Em produção é substituído pelo system do app; precisa apenas ser inofensivo
-# e funcional para os dois usos (conversa e agente com ferramentas).
+# The app's own system replaces it only with OLLAMA_PRESERVE_MODELFILE_SYSTEM=false;
+# under the default (true) it stays in force, beside the app's text folded into the
+# first user turn. Either way it has to be harmless and work for both uses (chat and
+# an agent with tools).
 # ----------------------------------------------------------------------------
 SYSTEM """
 Você é ShvIA, um assistente técnico multiuso. Você não representa nenhuma empresa: papel, persona e contexto de negócio, quando existirem, chegam pela aplicação como instruções de sistema e têm prioridade sobre este texto.
@@ -60,8 +65,9 @@ ESTILO
 
 # temperature 1.0: o QAT do Gemma 4 é calibrado para temp 1.0 e a família se
 # comporta MAL em temperaturas muito baixas — NÃO copiar o clássico 0.1-0.2 de
-# modelos coder. O app pode sobrescrever por modo via options (parâmetros de
-# sampling são aplicados por requisição SEM recarregar o modelo).
+# modelos coder. The app sends only `temperature`, and only when the caller sets one;
+# the rest of the sampling comes from here. Sampling options apply per request
+# WITHOUT reloading the model.
 PARAMETER temperature 1.0
 
 # top_k 64 / top_p 0.95: valores recomendados no model card do Gemma 4.
