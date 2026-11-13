@@ -4,7 +4,8 @@ Status: `ACTIVE`.
 
 Reviewed November 5, 2026 against shvia-ollama `e1eb95a`, shvia-web `b24e45a5`
 and shvia-code `7b5dd3f` (first written October 15 against `7e86446`, `25704dbc`
-and `b872d8c`). This is a source review, not live production acceptance.
+and `b872d8c`); the preserve-flag and `think` rows were re-read the same day against
+shvia-web `2db8252a`. This is a source review, not live production acceptance.
 
 ## Ownership and the application contract
 
@@ -20,20 +21,20 @@ In the reviewed Web source (`config/ollama.php` and
 | Setting or path | Current implementation |
 |---|---|
 | `OLLAMA_SYSTEM_PROMPT`, `OLLAMA_SYSTEM_PROMPT_FILE` | The application's persona text: the inline value wins; otherwise the file's contents. A missing or unreadable file yields an empty prompt rather than an error. Under v9 an empty value means the neutral fallback answers Chat without the Anna persona. |
-| `OLLAMA_PRESERVE_MODELFILE_SYSTEM` | Defaults to `true`. The driver accepts a per-request override, but no caller in `app/` sets one. Enabled folds application system messages into the first user turn. Disabled merges the opening system messages into one. |
+| `OLLAMA_PRESERVE_MODELFILE_SYSTEM` | Defaults to `true`. It decides every call that does not override it, Chat and Code included. Enabled folds application system messages into the first user turn, so the Modelfile's own `SYSTEM` stays in force. Disabled merges the opening system messages into one, and that message, when there is one, replaces the Modelfile's `SYSTEM`. The driver accepts a per-request override, and seven machine callers always pass `false`, because their prompt is the whole task and the persona is noise: the domain judge (`DomainJudge`), the conversation roll-up (`RollUpConversation`), memory consolidation (`ConsolidateConversationMemory`), meeting minutes (`MeetingMinutesWriter`), the model tier (`RunModelTier`), metadata-filter inference (`MetadataFilterInferrer`) and the compare judge (`CompareJudgeService`). The flag does not describe those seven calls; every other caller follows it, the price extractor (`PriceExtractor`, whose system message is also a whole task) among them. |
 | `OLLAMA_KEEP_ALIVE` | Defaults to empty: omit the request field and let the server decide. A configured numeric value is sent as a JSON number, not a duration string. |
 | `OLLAMA_TRUNCATE_STRICT` | Defaults to `true`; sends top-level `truncate:false`. Context overflow is visible rather than silently truncated. |
 | `OLLAMA_NUM_PREDICT`, `OLLAMA_NUM_PREDICT_MAX` | Every request sends `options.num_predict`: `8192` by default, or a caller's `max_tokens` clamped to `16384`; `0` sends nothing and leaves the Modelfile's `num_predict -1`. No Chat or Code caller passes a per-mode budget. |
-| `OLLAMA_THINK`, `OLLAMA_THINKING_MODELS` | `think` is sent only when `OLLAMA_THINK` is set, or when the effort selector is used on a model listed in `OLLAMA_THINKING_MODELS` (empty by default; an entry without `:tag`, such as `ShvIA`, matches every tag). Otherwise the model's own default applies. |
+| `OLLAMA_THINK`, `OLLAMA_THINKING_MODELS` | `think` is sent only when `OLLAMA_THINK` is set, or when the request carries an effort and the model is listed in `OLLAMA_THINKING_MODELS` (empty by default; an entry without `:tag`, such as `ShvIA`, matches every tag). On a listed model `low` sends `think:false` and any other effort sends `think:true`, overriding `OLLAMA_THINK`; on any other model the effort is ignored. The effort comes from the effort selector, a conversation's saved effort, a bot or project pin, or `AI_DEFAULT_EFFORT` when none of those is set; six of the seven machine callers named for the preserve flag pass `low`, and the compare judge passes the evaluator's own effort. Otherwise the model's own default applies. |
 | Code loop nudge | A user turn, rather than a trailing system message. |
 | `/code/chat` errors | Emit `message`, with `codigo` and integer `status` when available. |
 | anna history | Client-side compaction by message count, and by estimated tokens when the gateway reports the target's context window (old tool outputs are pruned first). This is not proof that every prompt fits a model's context. |
 
 These pieces already exist, although the older architecture page describes some
-as work to build. Its per-mode output budgets (Chat 2048 / Code 4096, also quoted
-in the v9 Modelfile comments) and its retry-after-overflow sequence were not found
-in the reviewed Web source; treat them as design material. Do not move
-retrieved text into system authority simply to match a sample payload.
+as work to build. Its per-mode output budgets (Chat 2048 / Code 4096) and its
+retry-after-overflow sequence were not found in the reviewed Web source; treat them
+as design material. Do not move retrieved text into system authority simply to
+match a sample payload.
 
 Model selection also depends on request/user preferences, model roles, configured
 host defaults and server availability. Updating a tag or one environment variable
@@ -86,6 +87,8 @@ Interpretation limits matter:
 
 - The script reads a file, not Laravel's effective cached configuration or
   per-request overrides. An absent flag is interpreted using its coded default.
+  The flag it reads decides only the calls that do not override it, Chat and Code
+  among them; the seven machine callers that always pass `false` do not depend on it.
 - A model without explicit `num_ctx` in `parameters` is unmeasured, even when the
   server could choose a default context for inference. The script does not infer
   that default from model architecture metadata or prompt text.
@@ -120,8 +123,9 @@ a tag until confirming no application or user still selects it.
 ## Code findings awaiting a decision
 
 Neither the October 15 nor the November 5 documentation review changed scripts or
-Modelfiles. The diagnostic's HTTP/API/parse handling was corrected in 1.3.3 and
-checked with local HTTP fixtures. Remaining follow-ups:
+Modelfile directives; the November 5 one corrected a comment in
+`ShvIA_v9.Modelfile`. The diagnostic's HTTP/API/parse handling was corrected in
+1.3.3 and checked with local HTTP fixtures. Remaining follow-ups:
 
 1. Compare full model identity; a valid context capacity is not proof of v8/v9 identity.
 2. Pin or record the resolved base digest for reproducible model builds; the build

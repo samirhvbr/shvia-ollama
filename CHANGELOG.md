@@ -1,5 +1,23 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.5 - Correct what the guide and the v9 Modelfile comment say the Web app sends per request
+
+The 1.3.4 guide said no caller in `app/` sets the per-request override of the preserve
+flag. Seven do, always with `false`: the domain judge, conversation roll-up, memory
+consolidation, meeting minutes, model tier, metadata-filter inference and the compare
+judge. They did at `b24e45a5`, the revision the guide cites, and still do at
+`2db8252a`, where this was re-read, and at the current shvia-web master. Every other
+caller passes nothing and follows `OLLAMA_PRESERVE_MODELFILE_SYSTEM`: Chat and Code, and
+also the price extractor, whose system message is likewise a whole task. So the flag the
+diagnostic reads does not describe those seven calls and does describe the rest. The
+`think` row said only the effort selector triggers it; a conversation's saved effort, a
+bot or project pin and `AI_DEFAULT_EFFORT` do too, on a model listed in
+`OLLAMA_THINKING_MODELS`, and six of the seven overriding callers pass `low`.
+
+The comment above `num_predict -1` in the v9 Modelfile named per-mode budgets (Chat
+2048 / Code 4096) that the app does not send; it now says what the app sends. Only
+comment lines changed: no directive, script, model or server was touched.
+
 ## 1.3.4 - Point the historical architecture page at what has since shipped
 
 `docs/ARQUITETURA-CAMADAS.md` keeps its text. Its top notice gains dated reading

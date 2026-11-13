@@ -112,8 +112,9 @@ PARAMETER num_ctx 32768
 # processing incomodar, subir para 512; se mostrar offload, descer para 128.
 PARAMETER num_batch 256
 
-# num_predict -1: sem teto no Modelfile (default do Ollama). O APP define por
-# modo via options (Chat 2048 / Code 4096) e é responsável pelo orçamento
+# num_predict -1: no cap in the Modelfile (Ollama's default). The app sends its own
+# options.num_predict (OLLAMA_NUM_PREDICT, default 8192; 0 sends none and this -1
+# applies), the same for Chat and Code, and is responsible for the budget
 # prompt + num_predict <= num_ctx.
 PARAMETER num_predict -1
 
