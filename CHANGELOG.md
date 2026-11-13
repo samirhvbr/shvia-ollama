@@ -1,5 +1,12 @@
 # CHANGELOG — Modelfiles SHVIA
 
+## 1.3.5 - Date the diagnosis page's pointer to the operating guide as November 5, 2026
+
+The notice at the top of `docs/DIAGNOSTICO-BUG-ANNA-CODE.md` still said the operating
+guide describes the source reviewed on October 15. The guide's own header and the
+architecture page say November 5, the date of the 1.3.4 review. Nothing else on the page
+changed.
+
 ## 1.3.5 - Qualify what the v9 Modelfile, the persona file and the architecture notes say the app sends as system and as RAG
 
 With the default `OLLAMA_PRESERVE_MODELFILE_SYSTEM=true` the Web app does not send a
